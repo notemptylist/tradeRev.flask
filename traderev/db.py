@@ -1,5 +1,7 @@
 from flask import current_app, g 
 from flask_pymongo import PyMongo
+from werkzeug.local import LocalProxy
+from typing import List
 
 def get_db():
     """Configuration method to return a db instance
@@ -11,3 +13,73 @@ def get_db():
         db = g._database = PyMongo(current_app).db
         
     return db
+
+db = LocalProxy(get_db)
+date_fmt = "%Y-%m-%d"
+
+def get_transaction_by_id(trans_id):
+    """Get one transaction by Id.
+
+    This Id is not the mongodb ObjectId, but rather the transaction id as
+    defined by the broker API.
+    Masks the _id field from output.
+    
+    Parameters
+    ----------
+    trans : int
+    """
+    res = db.transactions.find({"id": trans_id}, {"_id": 0})
+    return res
+
+def get_all_transactions():
+    """Get all transactions in the collection
+    Masks the _id field.
+    """
+    res = db.transactions.find({}, {"_id": 0}) \
+    .sort([("transactiondate", -1)])
+    return list(res)
+
+def get_transactions_by_date(day):
+    """Get all transactions occuring on the specified day.
+
+    Appends a new field called 'opendate' to each document.
+
+    Parameters
+    ----------
+    day : string
+    """
+    # Convert from timestamp string to date
+    dateconvert = {
+        "$addFields": {
+            "opendate": {
+                "$dateToString": {
+                    "format": date_fmt,
+                    "date": {
+                        "$toDate": "$transactiondate"
+                    }
+                }
+            }
+        }
+    }
+    #match_open = {"$match" : { "positioneffect": "OPENING" }}
+
+    # drop the _id field so we don't have to encode the ObjectId
+    project = { "$project" : { "_id" : 0 }}
+    match_date = { "$match" : { "opendate" : f"{day}" }}
+    pipeline = [dateconvert, match_date, project]
+    res = get_db().transactions.aggregate(pipeline)
+    return list(res)
+
+def get_opening_transactions():
+    """Get all transactions with openingeffect equal to 'OPENING'
+    """
+    return get_transactions_by_effect("OPENING")
+
+def get_closing_transactions():
+    """Get all transactions with openingeffect equal to 'CLOSING'
+    """
+    return get_transactions_by_effect("CLOSING")
+
+def get_transactions_by_effect(effect):
+    res = db.transactions.find({"positioneffect": effect})
+    return list(res)

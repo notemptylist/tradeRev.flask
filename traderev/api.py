@@ -1,57 +1,36 @@
 from flask import abort, Blueprint
-
-from traderev.db import get_db
+from traderev import db
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
 @bp.route("/transactions/", methods=["GET"])
-def get_transactions():
-    db = get_db()
-    res = db.transactions.find({}, {"_id": 0}) \
-    .limit(10) \
-    .sort([("transactiondate", -1)])
-
-    return list(res)
+def transactions():
+    res = db.get_all_transactions()
+    return res
 
 @bp.route("/transactions/<int:trans_id>", methods=["GET"])
-def get_transaction_by_id(trans_id):
-    """Get one transaction by Id.
-
-    This Id is not the mongodb ObjectId, but rather the transaction id as defined by the broker API.
-    """
-    res = get_db().transactions.find_one({"id": trans_id}, {"_id": 0})
-    if not res:
-        abort(404)
-
+def transaction_by_id(trans_id):
+    """Returns a single document representing the transaction specified by ID"""
+    try:
+        trans_id = int(trans_id)
+    except ValueError:
+        return None
+    res = db.get_transaction_by_id(trans_id)
     return res
 
 @bp.route("/transactions/daily/<date>", methods=["GET"])
-def get_transaction_by_date(date):
+def transaction_by_date(date):
     """List transactions by date.
     """
-    # Convert from timestamp string to date
-    dateconvert = {
-        "$addFields": {
-            "opendate": {
-                "$dateToString": {
-                    "format": "%Y-%m-%d",
-                    "date": {
-                        "$toDate": "$transactiondate"
-                    }
-                }
-            }
-        }
-    }
-    #match_open = {"$match" : { "positioneffect": "OPENING" }}
-
-    # drop the _id field so we don't have to encode the ObjectId
-    project = { "$project" : { "_id" : 0 }}
-    match_date = { "$match" : { "opendate" : f"{date}" }}
-    pipeline = [dateconvert, match_date, project]
-    res = get_db().transactions.aggregate(pipeline)
+    from datetime import datetime
+    try:
+        day = datetime.strptime(date, db.date_fmt).date()
+    except ValueError:
+        abort(400)
+    res = db.get_transactions_by_date(day)
     if not res:
         abort(404)
-    return list(res)
+    return res
 
 @bp.route("/trades", methods=["POST"])
 def update_trades():
@@ -61,4 +40,5 @@ def update_trades():
     # 1. select from transactions all opening transactions
     # 2. create trade document
     # 3. insert into trades collection
-    # 4. select closing transactions (check if expiration transactions )
+    # 4. select closing transactions (check for expiration transactions)
+    # 5. update trades documents with closing transactions
