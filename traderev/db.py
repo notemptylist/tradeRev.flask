@@ -1,4 +1,4 @@
-from flask import current_app, g 
+from flask import current_app, g
 from flask_pymongo import PyMongo
 from werkzeug.local import LocalProxy
 from typing import List
@@ -11,11 +11,23 @@ def get_db():
 
     if db is None:
         db = g._database = PyMongo(current_app).db
-        
+
     return db
 
 db = LocalProxy(get_db)
 date_fmt = "%Y-%m-%d"
+dateconvert = {
+    "$addFields": {
+        "opendate": {
+            "$dateToString": {
+                "format": date_fmt,
+                "date": {
+                    "$toDate": "$transactiondate"
+                }
+            }
+        }
+    }
+}
 
 def get_transaction_by_id(trans_id):
     """Get one transaction by Id.
@@ -49,23 +61,10 @@ def get_transactions_by_date(day):
     day : string
     """
     # Convert from timestamp string to date
-    dateconvert = {
-        "$addFields": {
-            "opendate": {
-                "$dateToString": {
-                    "format": date_fmt,
-                    "date": {
-                        "$toDate": "$transactiondate"
-                    }
-                }
-            }
-        }
-    }
-    #match_open = {"$match" : { "positioneffect": "OPENING" }}
 
     # drop the _id field so we don't have to encode the ObjectId
-    project = { "$project" : { "_id" : 0 }}
-    match_date = { "$match" : { "opendate" : f"{day}" }}
+    project = {"$project": {"_id": 0}}
+    match_date = {"$match": {"opendate": f"{day}"}}
     pipeline = [dateconvert, match_date, project]
     res = get_db().transactions.aggregate(pipeline)
     return list(res)
@@ -81,5 +80,29 @@ def get_closing_transactions():
     return get_transactions_by_effect("CLOSING")
 
 def get_transactions_by_effect(effect):
-    res = db.transactions.find({"positioneffect": effect})
+    """Get transactions with matching positioneffect, mask _id in projection."""
+    project = {"$project" : { "_id" : 0 }}
+    match_open = {"$match" : { "positioneffect": "OPENING" }}
+    # pipeline = [dateconvert, match_open, project]
+    # XXX: remove limit
+    limit = {"$limit": 100}
+    pipeline = [dateconvert, match_open, limit, project]
+    res = db.transactions.aggregate(pipeline)
     return list(res)
+
+def get_trades_opening_transaction_ids():
+    """Get the transaction ids of trades which are mentioned
+    in the openingtransactions subdocument of trades.
+    """
+    unwind = {"$unwind": "$openingtransactions"}
+    newroot = {"$replaceRoot": { "newRoot": "$openingtransactions" }}
+    project = {"$project": {"id": 1}}
+    pipeline = [unwind, newroot, project]
+    res = db.trades.aggregate(pipeline)
+    return list(res)
+
+def create_trade(trade_doc):
+    """Insert a single trade document into collection
+    """
+    res = db.trades.insert_one(trade_doc)
+    return res

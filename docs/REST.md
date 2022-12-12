@@ -24,6 +24,10 @@ Trades are created from existing transactions.
 > GET /api/trades/\<id\> -> { single trade with id = \<id\>}
 4. Retrieve trades opened on specified date
 > GET /api/trades/daily/<2006-01-02> -> [ trades which were **opened** on date ]
+5. Retrieve trades opened between two dates
+> GET /api/trades/dayrange/<2006-01-02>/to/<2006-01-02> -> [ trades which were **opened** on date]   
+Alternative :  
+> GET /api/trades/dayrange?from=2006-01-02&to=2006-02-01
 
 ---
 **Stats** 

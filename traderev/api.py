@@ -1,4 +1,4 @@
-from flask import abort, Blueprint
+from flask import abort, Blueprint, current_app as app
 from traderev import db
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -38,7 +38,35 @@ def update_trades():
     """
     # TODO:
     # 1. select from transactions all opening transactions
-    # 2. create trade document
-    # 3. insert into trades collection
-    # 4. select closing transactions (check for expiration transactions)
-    # 5. update trades documents with closing transactions
+    # 2. select all transaction ids from trades.openingtransactions sub document
+    # 3. create trade document
+    # 4. insert into trades collection
+    # 5. select closing transactions (check for expiration transactions)
+    # 6. update trades documents with closing transactions
+    import pprint
+    opening_trans_trades = db.get_trades_opening_transaction_ids()
+    opening_ids = [doc['id'] for doc in opening_trans_trades]
+    opening_trans = db.get_opening_transactions()
+    inserted_count = 0
+    for tr in opening_trans:
+        if tr['id'] in opening_ids:
+            app.logger.info("Transaction with ID (%s) already tracked in trades collection.", tr['id'])
+            continue
+        trade_doc = {
+            'symbol': tr['symbol'],
+            'underlying': tr['underlying'],
+            'putcall': tr['putcall'],
+            'openingdate': tr['opendate'],
+            'openingtransactions': [{
+                'id': tr['id'],
+                'amount': tr['amount']
+            }],
+            'closingtransaction': [],
+            'openamount': tr['amount']
+        }
+        res = db.create_trade(trade_doc)
+        if res:
+            inserted_count += 1
+            app.logger.info("Inserted trade %s", res.inserted_id)
+
+    return f"Inserted {inserted_count} new trades"
