@@ -81,12 +81,12 @@ def get_closing_transactions():
 
 def get_transactions_by_effect(effect):
     """Get transactions with matching positioneffect, mask _id in projection."""
-    project = {"$project" : { "_id" : 0 }}
-    match_open = {"$match" : { "positioneffect": "OPENING" }}
-    # pipeline = [dateconvert, match_open, project]
+    project = {"$project" : {"_id" : 0}}
+    match_open = {"$match" : {"positioneffect": "OPENING"}}
+    pipeline = [dateconvert, match_open, project]
     # XXX: remove limit
-    limit = {"$limit": 100}
-    pipeline = [dateconvert, match_open, limit, project]
+    # limit = {"$limit": 100}
+    # pipeline = [dateconvert, match_open, limit, project]
     res = db.transactions.aggregate(pipeline)
     return list(res)
 
@@ -95,7 +95,18 @@ def get_trades_opening_transaction_ids():
     in the openingtransactions subdocument of trades.
     """
     unwind = {"$unwind": "$openingtransactions"}
-    newroot = {"$replaceRoot": { "newRoot": "$openingtransactions" }}
+    newroot = {"$replaceRoot": {"newRoot": "$openingtransactions"}}
+    project = {"$project": {"id": 1}}
+    pipeline = [unwind, newroot, project]
+    res = db.trades.aggregate(pipeline)
+    return list(res)
+
+def get_trades_closing_transaction_ids():
+    """Get the transaction ids of trades which are mentioned
+    in the closingtransactions subdocument of trades.
+    """
+    unwind = {"$unwind": "$closingtransactions"}
+    newroot = {"$replaceRoot": {"newRoot": "$closingtransactions"}}
     project = {"$project": {"id": 1}}
     pipeline = [unwind, newroot, project]
     res = db.trades.aggregate(pipeline)
@@ -106,3 +117,52 @@ def create_trade(trade_doc):
     """
     res = db.trades.insert_one(trade_doc)
     return res
+
+def get_open_trade_for_symbol(symbol):
+    """Get the open trade document for the specified symbol.
+    """
+    # pick the oldest trade for the symbol which is open
+    match = {"$match": {"symbol": symbol, "openamount": {"$gt": 0}}}
+    sort = {"$sort": {"openingdate": 1 }}
+    limit = {"$limit": 1}
+    pipeline = [match, sort, limit]
+    res = db.trades.aggregate(pipeline)
+    return res.next()
+
+def close_trade_with_transaction(trade_id, tr):
+    """Update the trade document with information from the closing
+    transaction.
+
+    Parameters
+    ----------
+    trade_id : ObjectId of trade
+    tr : transaction document
+    """
+    match = {"_id": trade_id}
+    totalfees = tr['optregfee'] + tr['regfee'] + tr['additionalfee'] + \
+        tr['cdscfee'] + tr['othercharges'] + tr['rfee'] + tr['secfee']
+    update = {
+        "$set": {
+            "closingdate": {"$todate": tr['transactiondate']}
+        },
+        "$inc": {
+            "closingprice": tr['price'] * tr['amount']
+        },
+        "$inc": {
+            "totalcommission": tr['commission']
+        },
+        "$inc": {
+            "totalfees": totalfees
+        },
+        "$inc": {
+            "openamount": -tr['amount']
+        },
+        "$push": {
+            "closingtransactions": {
+                'id': tr['id'],
+                "amount": tr["amount"]
+            }
+        },
+    }
+    db.trades.update_one(match, update)
+    return True

@@ -3,6 +3,13 @@ from traderev import db
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
+
+def _flatten_dict(mappings, field):
+    """Takes in a list of dictionaries and returns a list of
+    values which are keyed by `field`.
+    """
+    return [d[field] for d in mappings]
+
 @bp.route("/transactions/", methods=["GET"])
 def transactions():
     res = db.get_all_transactions()
@@ -36,6 +43,10 @@ def transaction_by_date(date):
 def update_trades():
     """Update trades collection
     """
+    # Can't think of another place to do this
+    db.db.trades.create_index("symbol", background=True)
+    db.db.trades.create_index("openingdate", background=True)
+    db.db.trades.create_index("closingdate", background=True)
     # TODO:
     # 1. select from transactions all opening transactions
     # 2. select all transaction ids from trades.openingtransactions sub document
@@ -43,30 +54,55 @@ def update_trades():
     # 4. insert into trades collection
     # 5. select closing transactions (check for expiration transactions)
     # 6. update trades documents with closing transactions
-    import pprint
     opening_trans_trades = db.get_trades_opening_transaction_ids()
-    opening_ids = [doc['id'] for doc in opening_trans_trades]
+    opening_ids = _flatten_dict(opening_trans_trades, "id")
     opening_trans = db.get_opening_transactions()
     inserted_count = 0
     for tr in opening_trans:
+        # TODO: Move this logic to db.py, add an agregation stage to filter these out.
         if tr['id'] in opening_ids:
-            app.logger.info("Transaction with ID (%s) already tracked in trades collection.", tr['id'])
+            app.logger.debug("Transaction with ID (%s) already tracked in trades collection.", tr['id'])
             continue
+        totalfees = tr['optregfee'] + tr['regfee'] + tr['additionalfee'] + \
+            tr['cdscfee'] + tr['othercharges'] + tr['rfee'] + tr['secfee']
         trade_doc = {
-            'symbol': tr['symbol'],
-            'underlying': tr['underlying'],
-            'putcall': tr['putcall'],
-            'openingdate': tr['opendate'],
-            'openingtransactions': [{
-                'id': tr['id'],
-                'amount': tr['amount']
+            "symbol": tr['symbol'],
+            "underlying": tr['underlying'],
+            "putcall": tr['putcall'],
+            "openingdate": {"$toDate": tr['transactiondate']},
+            "closingdate": 0,
+            "openingprice": tr['price'] * tr['amount'],
+            "closingprice": 0,
+            "profitdollars": 0,
+            "profitpercent": 0,
+            "totalcommission": tr['commission'],
+            "totalfees": totalfees,
+            "openingtransactions": [{
+                "id": tr['id'],
+                "amount": tr['amount']
             }],
-            'closingtransaction': [],
-            'openamount': tr['amount']
+            "closingtransactions": [],
+            "openamount": tr['amount']
         }
         res = db.create_trade(trade_doc)
         if res:
             inserted_count += 1
-            app.logger.info("Inserted trade %s", res.inserted_id)
+            app.logger.debug("Inserted trade %s", res.inserted_id)
 
-    return f"Inserted {inserted_count} new trades"
+    closing_trans_trades = db.get_trades_closing_transaction_ids()
+    closing_ids = _flatten_dict(closing_trans_trades, "id")
+    all_closing_trans = db.get_closing_transactions()
+    updated_count = 0
+    for tr in all_closing_trans:
+        # TODO: Another way to do this is to select trades which are still in 'open' state
+        # and query for transactions which match the symbol of these trades.
+        if tr['id'] in closing_ids:
+            app.logger.debug("Transaction with ID (%s) already tracked in trades collection.", tr['id'])
+            continue
+        # ideally only a single trade is open per symbol, this works for options.
+        trade = db.get_open_trade_for_symbol(tr['symbol'])
+        app.logger.debug("Found an open trade to close : %s", trade)
+        db.close_trade_with_transaction(trade['_id'], tr)
+        updated_count += 1
+
+    return f"Inserted {inserted_count} new trades\nUpdated {updated_count} trades."
