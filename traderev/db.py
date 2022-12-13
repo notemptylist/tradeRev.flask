@@ -82,7 +82,7 @@ def get_closing_transactions():
 def get_transactions_by_effect(effect):
     """Get transactions with matching positioneffect, mask _id in projection."""
     project = {"$project" : {"_id" : 0}}
-    match_open = {"$match" : {"positioneffect": "OPENING"}}
+    match_open = {"$match" : {"positioneffect": effect}}
     pipeline = [dateconvert, match_open, project]
     # XXX: remove limit
     # limit = {"$limit": 100}
