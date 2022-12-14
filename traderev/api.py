@@ -69,9 +69,9 @@ def update_trades():
             "symbol": tr['symbol'],
             "underlying": tr['underlying'],
             "putcall": tr['putcall'],
-            "openingdate": {"$toDate": tr['transactiondate']},
+            "openingdate": tr['transactiondate'],
             "closingdate": 0,
-            "openingprice": tr['price'] * tr['amount'],
+            "openingprice": tr['cost'],
             "closingprice": 0,
             "profitdollars": 0,
             "profitpercent": 0,
@@ -101,7 +101,10 @@ def update_trades():
             continue
         # ideally only a single trade is open per symbol, this works for options.
         trade = db.get_open_trade_for_symbol(tr['symbol'])
-        app.logger.debug("Found an open trade to close : %s", trade)
+        if not trade:
+            app.logger.info("No open trade found for this closing transaction: %s", tr)
+            continue
+        # app.logger.debug("Found an open trade to close : %s", trade)
         db.close_trade_with_transaction(trade['_id'], tr)
         updated_count += 1
 

@@ -127,7 +127,8 @@ def get_open_trade_for_symbol(symbol):
     limit = {"$limit": 1}
     pipeline = [match, sort, limit]
     res = db.trades.aggregate(pipeline)
-    return res.next()
+    for r in res:
+        return r
 
 def close_trade_with_transaction(trade_id, tr):
     """Update the trade document with information from the closing
@@ -143,19 +144,13 @@ def close_trade_with_transaction(trade_id, tr):
         tr['cdscfee'] + tr['othercharges'] + tr['rfee'] + tr['secfee']
     update = {
         "$set": {
-            "closingdate": {"$todate": tr['transactiondate']}
+            "closingdate": tr['transactiondate']
         },
         "$inc": {
-            "closingprice": tr['price'] * tr['amount']
-        },
-        "$inc": {
-            "totalcommission": tr['commission']
-        },
-        "$inc": {
-            "totalfees": totalfees
-        },
-        "$inc": {
-            "openamount": -tr['amount']
+            "closingprice": tr['cost'],
+            "totalcommission": tr['commission'],
+            "totalfees": totalfees,
+            "openamount": -tr['amount'],
         },
         "$push": {
             "closingtransactions": {
