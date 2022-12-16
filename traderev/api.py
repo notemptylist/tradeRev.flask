@@ -1,4 +1,4 @@
-from flask import abort, Blueprint, current_app as app
+from flask import abort, Blueprint, current_app as app, jsonify, request
 from traderev import db
 
 bp = Blueprint("api", __name__, url_prefix="/api")
@@ -38,6 +38,67 @@ def transaction_by_date(date):
     if not res:
         abort(404)
     return res
+
+@bp.route("/trades/v2", methods=["POST"])
+def update_trades_v2():
+    """An alternative way to proces trades.
+
+        1. Go through all transactions in date order
+        2. Insert a trade when an opening transaction is encountered.
+        3. Close when encountering a closing transaction for the same symbol.
+    """
+    # Can't think of another place to do this
+    db.db.trades.create_index("symbol", background=True)
+    db.db.trades.create_index("openingdate", background=True)
+    db.db.trades.create_index("closingdate", background=True)
+    db.db.processed_transactions.create_index("id", background=True, unique=True)
+    if request.data:
+        try:
+            page_size = request.get_json()['page_size']
+        except KeyError:
+            page_size = 100
+    else:
+        page_size = 100
+    page = 1
+    keep_going = True
+    while keep_going:
+        ordered_trans = db.get_transactions_in_order(skip=page_size*(page-1), limit=page_size)
+        app.logger.debug("Processing page: {%d}", page)
+        keep_going = False
+        for tr in ordered_trans:
+            if tr['positioneffect'] == "OPENING":
+                # app.logger.debug("Processing trans id : {%d} - date: {%s}", tr['id'], tr['transactiondate'])
+                totalfees = tr['optregfee'] + tr['regfee'] + tr['additionalfee'] + \
+                    tr['cdscfee'] + tr['othercharges'] + tr['rfee'] + tr['secfee']
+                trade_doc = {
+                    "symbol": tr['symbol'],
+                    "underlying": tr['underlying'],
+                    "putcall": tr['putcall'],
+                    "openingdate": tr['transactiondate'],
+                    "closingdate": 0,
+                    "openingprice": tr['cost'],
+                    "closingprice": 0,
+                    "profitdollars": 0,
+                    "profitpercent": 0,
+                    "totalcommission": tr['commission'],
+                    "totalfees": totalfees,
+                    "openingtransactions": [{
+                        "id": tr['id'],
+                        "amount": tr['amount']
+                    }],
+                    "closingtransactions": [],
+                    "openamount": tr['amount']
+                }
+                res = db.create_trade(trade_doc)
+            if tr['positioneffect'] == "CLOSING":
+                trade = db.get_open_trade_for_symbol(tr['symbol'])
+                if not trade:
+                    app.logger.info("No open trade found for this closing transaction: %s", tr)
+                    continue
+                db.close_trade_with_transaction(trade['_id'], tr)
+            keep_going = True
+        page += 1
+    return f"Processed {page} pages of {page_size}"
 
 @bp.route("/trades", methods=["POST"])
 def update_trades():
@@ -109,3 +170,12 @@ def update_trades():
         updated_count += 1
 
     return f"Inserted {inserted_count} new trades\nUpdated {updated_count} trades."
+
+@bp.route("/trades/profits", methods=["POST"])
+def update_trade_profits():
+    res = db.update_trades_profits()
+    output = {
+        "matched_count": res.matched_count,
+        "modified_count": res.modified_count,
+    }
+    return output

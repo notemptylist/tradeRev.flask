@@ -182,4 +182,24 @@ def get_transactions_in_order(field='transactiondate', skip=0, limit=None):
 def track_processed_transaction(trans_id):
     """Simply insert into db.processed the ID of specified transaction
     """
-    res = db.processed_transactions.insert_one({ "id": trans_id})
+    res = db.processed_transactions.insert_one({"id": trans_id})
+
+def update_trades_profits():
+    """Update the profit fields in trades which are 'closed'
+    """
+    match = {"openamount" : 0}
+    update = [{"$set": {
+            "profitdollars": {
+                "$sum": ["$openingprice", "$closingprice"]
+            }
+        }
+    }, {"$set": {
+            "profitpercent": {
+                "$divide": ["$profitdollars", {
+                    "$abs": "$openingprice"
+                }]
+            }
+        }
+    }]
+    res = db.trades.update_many(match, update)
+    return res
