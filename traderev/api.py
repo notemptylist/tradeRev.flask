@@ -1,3 +1,4 @@
+import time
 from flask import abort, Blueprint, current_app as app, jsonify, request
 from traderev import db
 
@@ -47,11 +48,11 @@ def update_trades_v2():
         2. Insert a trade when an opening transaction is encountered.
         3. Close when encountering a closing transaction for the same symbol.
     """
+    start_time = time.time()
     # Can't think of another place to do this
     db.db.trades.create_index("symbol", background=True)
     db.db.trades.create_index("openingdate", background=True)
     db.db.trades.create_index("closingdate", background=True)
-    db.db.processed_transactions.create_index("id", background=True, unique=True)
     if request.data:
         try:
             page_size = request.get_json()['page_size']
@@ -62,12 +63,14 @@ def update_trades_v2():
     page = 1
     keep_going = True
     while keep_going:
-        ordered_trans = db.get_transactions_in_order(skip=page_size*(page-1), limit=page_size)
-        app.logger.debug("Processing page: {%d}", page)
+        ids_to_mark  = []
+        ordered_trans = db.get_transactions_in_order(skip=0, limit=page_size)
+        app.logger.debug("Processing page: %d", page)
         keep_going = False
         for tr in ordered_trans:
+            # should always mark it as processed, nothing else could be done with it
+            ids_to_mark.append(tr['id'])
             if tr['positioneffect'] == "OPENING":
-                # app.logger.debug("Processing trans id : {%d} - date: {%s}", tr['id'], tr['transactiondate'])
                 totalfees = tr['optregfee'] + tr['regfee'] + tr['additionalfee'] + \
                     tr['cdscfee'] + tr['othercharges'] + tr['rfee'] + tr['secfee']
                 trade_doc = {
@@ -90,20 +93,27 @@ def update_trades_v2():
                     "openamount": tr['amount']
                 }
                 res = db.create_trade(trade_doc)
-            if tr['positioneffect'] == "CLOSING":
+            elif tr['positioneffect'] == "CLOSING":
+                # find the matching open trade for it
                 trade = db.get_open_trade_for_symbol(tr['symbol'])
-                if not trade:
-                    app.logger.info("No open trade found for this closing transaction: %s", tr)
-                    continue
-                db.close_trade_with_transaction(trade['_id'], tr)
+                if trade:
+                    db.close_trade_with_transaction(trade['_id'], tr)
+                else:
+                    app.logger.info("No open trade found for this closing transaction: %d", tr['id'])
+
+        if ids_to_mark:
             keep_going = True
+            app.logger.info(f"Marking {len(ids_to_mark)} ids as processed.")
+            db.mark_processed_transaction_bulk(ids_to_mark)
         page += 1
-    return f"Processed {page} pages of {page_size}"
+    time_elapsed = time.time() - start_time
+    return f"Processed {page} pages of {page_size} in {time_elapsed}"
 
 @bp.route("/trades", methods=["POST"])
 def update_trades():
     """Update trades collection
     """
+    start_time = time.time()
     # Can't think of another place to do this
     db.db.trades.create_index("symbol", background=True)
     db.db.trades.create_index("openingdate", background=True)
@@ -168,8 +178,8 @@ def update_trades():
         # app.logger.debug("Found an open trade to close : %s", trade)
         db.close_trade_with_transaction(trade['_id'], tr)
         updated_count += 1
-
-    return f"Inserted {inserted_count} new trades\nUpdated {updated_count} trades."
+    elapsed_time = time.time() - start_time
+    return f"Inserted {inserted_count} new trades\nUpdated {updated_count} trades.\nElapsed: {elapsed_time}"
 
 @bp.route("/trades/profits", methods=["POST"])
 def update_trade_profits():

@@ -176,13 +176,22 @@ def get_transactions_in_order(field='transactiondate', skip=0, limit=None):
     -------
     res : A CommandCursor object
     """
-    res = db.transactions.find({}).sort(field, 1).skip(skip).limit(limit)
+    match = {"processed": { "$ne": 1}}
+    res = db.transactions.find(match).sort(field, 1).skip(skip).limit(limit)
     return res
 
-def track_processed_transaction(trans_id):
-    """Simply insert into db.processed the ID of specified transaction
+def mark_processed_transaction(trans_id):
+    """Mark the transaction as having been processed so it can be filtered out
     """
-    res = db.processed_transactions.insert_one({"id": trans_id})
+    update = {"$set": {"processed": 1}}
+    res = db.transactions.update_one({"id": trans_id}, update)
+
+def mark_processed_transaction_bulk(trans_ids):
+    """Mark the transactions as having been processed.
+    """
+    match = {"id" : {"$in": trans_ids}}
+    update = {"$set": {"processed": 1}}
+    return db.transactions.update_many(match, update)
 
 def update_trades_profits():
     """Update the profit fields in trades which are 'closed'
@@ -201,5 +210,4 @@ def update_trades_profits():
             }
         }
     }]
-    res = db.trades.update_many(match, update)
-    return res
+    return db.trades.update_many(match, update)
