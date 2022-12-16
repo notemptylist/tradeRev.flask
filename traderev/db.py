@@ -161,3 +161,25 @@ def close_trade_with_transaction(trade_id, tr):
     }
     db.trades.update_one(match, update)
     return True
+
+def get_transactions_in_order(field='transactiondate', skip=0, limit=None):
+    """Return transactions ordered by transactiondate or choicen field.
+    Mask the _id field.
+
+    Parameters
+    ----------
+    field : str A key to sort by
+    skip : int Number of records to skip
+    limit : int How many records to return
+
+    Returns
+    -------
+    res : A CommandCursor object
+    """
+    res = db.transactions.find({}).sort(field, 1).skip(skip).limit(limit)
+    return res
+
+def track_processed_transaction(trans_id):
+    """Simply insert into db.processed the ID of specified transaction
+    """
+    res = db.processed_transactions.insert_one({ "id": trans_id})
