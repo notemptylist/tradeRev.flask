@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from flask import abort, Blueprint, current_app as app, jsonify, request
 from traderev import db
 
@@ -30,12 +31,29 @@ def transaction_by_id(trans_id):
 def transaction_by_date(date):
     """List transactions by date.
     """
-    from datetime import datetime
     try:
         day = datetime.strptime(date, db.date_fmt).date()
     except ValueError:
         abort(400)
     res = db.get_transactions_by_date(day)
+    if not res:
+        abort(404)
+    return res
+
+@bp.route("/trades/daily/<date>", methods=["GET"])
+def trades_by_date(date):
+    """List trades by specified date.
+    """
+    try:
+        day = datetime.strptime(date, db.date_fmt).date()
+    except ValueError:
+        abort(400)
+    if 'opened' in request.args:
+        res = db.get_opened_trades_by_date(day)
+    elif 'closed' in request.args:
+        res = db.get_closed_trades_by_date(day)
+    else:
+        abort(400)
     if not res:
         abort(404)
     return res
@@ -118,13 +136,6 @@ def update_trades():
     db.db.trades.create_index("symbol", background=True)
     db.db.trades.create_index("openingdate", background=True)
     db.db.trades.create_index("closingdate", background=True)
-    # TODO:
-    # 1. select from transactions all opening transactions
-    # 2. select all transaction ids from trades.openingtransactions sub document
-    # 3. create trade document
-    # 4. insert into trades collection
-    # 5. select closing transactions (check for expiration transactions)
-    # 6. update trades documents with closing transactions
     opening_trans_trades = db.get_trades_opening_transaction_ids()
     opening_ids = _flatten_dict(opening_trans_trades, "id")
     opening_trans = db.get_opening_transactions()

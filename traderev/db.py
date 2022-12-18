@@ -63,10 +63,72 @@ def get_transactions_by_date(day):
     # Convert from timestamp string to date
 
     # drop the _id field so we don't have to encode the ObjectId
+    dateconvert = {
+        "$addFields": {
+            "openDate": {
+                "$dateToString": {
+                    "date": "$transactiondate",
+                    "format": f"{date_fmt}"
+                }
+            }
+        }
+    }
+    match_date = {"$match": {"openDate": f"{day}"}}
     project = {"$project": {"_id": 0}}
-    match_date = {"$match": {"opendate": f"{day}"}}
     pipeline = [dateconvert, match_date, project]
     res = get_db().transactions.aggregate(pipeline)
+    return list(res)
+
+def get_opened_trades_by_date(day):
+    """Get all trades opened on the specified day.
+
+    Appends a new field called 'opendate' to each document.
+
+    Parameters
+    ----------
+    day : string
+    """
+    dateconvert = {
+        "$addFields": {
+            "openDate": {
+                "$dateToString": {
+                    "date": "$openingdate",
+                    "format": f"{date_fmt}"
+                }
+            }
+        }
+    }
+    match_date = {"$match": {"openDate": f"{day}"}}
+    project = {"$project": {"_id": 0}}
+    pipeline = [dateconvert, match_date, project]
+    res = get_db().trades.aggregate(pipeline)
+    return list(res)
+
+def get_closed_trades_by_date(day):
+    """Get all trades closed on the specified day.
+
+    Appends a new field called 'closeDate' to each document.
+
+    Parameters
+    ----------
+    day : string
+    """
+    valid_date = {"$match": {"closingdate": {"$ne": 0}}}
+    dateconvert = {
+        "$addFields": {
+            "closeDate": {
+                "$dateToString": {
+                    "date": "$closingdate",
+                    "format": f"{date_fmt}"
+                }
+            }
+        }
+    }
+    print(dateconvert)
+    match_date = {"$match": {"closeDate": f"{day}"}}
+    project = {"$project": {"_id": 0}}
+    pipeline = [valid_date, dateconvert, match_date, project]
+    res = get_db().trades.aggregate(pipeline)
     return list(res)
 
 def get_opening_transactions():
