@@ -16,9 +16,9 @@ def get_db():
 
 db = LocalProxy(get_db)
 date_fmt = "%Y-%m-%d"
-dateconvert = {
+convert_transactiondate = {
     "$addFields": {
-        "opendate": {
+        "openDate": {
             "$dateToString": {
                 "format": date_fmt,
                 "date": {
@@ -60,23 +60,10 @@ def get_transactions_by_date(day):
     ----------
     day : string
     """
-    # Convert from timestamp string to date
-
-    # drop the _id field so we don't have to encode the ObjectId
-    dateconvert = {
-        "$addFields": {
-            "openDate": {
-                "$dateToString": {
-                    "date": "$transactiondate",
-                    "format": f"{date_fmt}"
-                }
-            }
-        }
-    }
     match_date = {"$match": {"openDate": f"{day}"}}
     project = {"$project": {"_id": 0}}
-    pipeline = [dateconvert, match_date, project]
-    res = get_db().transactions.aggregate(pipeline)
+    pipeline = [convert_transactiondate, match_date, project]
+    res = db.transactions.aggregate(pipeline)
     return list(res)
 
 def get_opened_trades_by_date(day):
@@ -101,7 +88,7 @@ def get_opened_trades_by_date(day):
     match_date = {"$match": {"openDate": f"{day}"}}
     project = {"$project": {"_id": 0}}
     pipeline = [dateconvert, match_date, project]
-    res = get_db().trades.aggregate(pipeline)
+    res = db.trades.aggregate(pipeline)
     return list(res)
 
 def get_closed_trades_by_date(day):
@@ -124,11 +111,10 @@ def get_closed_trades_by_date(day):
             }
         }
     }
-    print(dateconvert)
     match_date = {"$match": {"closeDate": f"{day}"}}
     project = {"$project": {"_id": 0}}
     pipeline = [valid_date, dateconvert, match_date, project]
-    res = get_db().trades.aggregate(pipeline)
+    res = db.trades.aggregate(pipeline)
     return list(res)
 
 def get_opening_transactions():
@@ -145,10 +131,7 @@ def get_transactions_by_effect(effect):
     """Get transactions with matching positioneffect, mask _id in projection."""
     project = {"$project" : {"_id" : 0}}
     match_open = {"$match" : {"positioneffect": effect}}
-    pipeline = [dateconvert, match_open, project]
-    # XXX: remove limit
-    # limit = {"$limit": 100}
-    # pipeline = [dateconvert, match_open, limit, project]
+    pipeline = [convert_transactiondate, match_open, project]
     res = db.transactions.aggregate(pipeline)
     return list(res)
 
