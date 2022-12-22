@@ -200,3 +200,41 @@ def update_trade_profits():
         "modified_count": res.modified_count,
     }
     return output
+
+@bp.route("/stats/daily/<day>", methods=["GET"])
+def daily_stats(day):
+    try:
+        day = datetime.strptime(day, db.date_fmt).date()
+    except ValueError:
+        abort(400)
+    trades = db.get_closed_trades_by_date(day)
+    if not trades:
+        abort(404)
+    stats = {
+        'total_trades': len(trades),
+        'win_rate': 0,
+        'max_gain': 0,
+        'max_loss': 0,
+        'put_count': 0,
+        'call_count': 0,
+        'total_commission': 0,
+        'total_fees': 0,
+    }
+    for tr in trades:
+        if tr['profitdollars'] > 0:
+            stats['win_rate'] += 1
+            stats['max_gain'] = max(tr['profitdollars'], stats['max_gain'])
+        elif tr['profitdollars'] < 0:
+            stats['win_rate'] -= 1
+            stats['max_loss'] = min(tr['profitdollars'], stats['max_loss'])
+
+        if tr['putcall'] == "PUT":
+            stats['put_count'] += 1
+        elif tr['putcall'] == "CALL":
+            stats['call_count'] += 1
+
+        stats['total_commission'] += tr['totalcommission']
+        stats['total_fees'] += tr['totalfees']
+
+    stats['win_rate'] = stats['win_rate'] / stats['total_trades'] * 100
+    return stats
