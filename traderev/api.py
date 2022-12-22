@@ -213,20 +213,30 @@ def daily_stats(day):
     stats = {
         'total_trades': len(trades),
         'win_rate': 0,
-        'max_gain': 0,
-        'max_loss': 0,
+        'max_gain_dollars': 0,
+        'max_loss_dollars': 0,
+        'max_gain_percent': 0,
+        'max_loss_percent': 0,
+        'avg_loss_dollars': 0,
+        'avg_loss_percent': 0,
         'put_count': 0,
         'call_count': 0,
         'total_commission': 0,
         'total_fees': 0,
+        'pandl': 0,
     }
+    total_loses = 0
+    num_loses = 0
     for tr in trades:
         if tr['profitdollars'] > 0:
             stats['win_rate'] += 1
-            stats['max_gain'] = max(tr['profitdollars'], stats['max_gain'])
+            stats['max_gain_dollars'] = max(tr['profitdollars'], stats['max_gain_dollars'])
+            stats['max_gain_percent'] = max(tr['profitpercent'], stats['max_gain_percent'])
         elif tr['profitdollars'] < 0:
-            stats['win_rate'] -= 1
-            stats['max_loss'] = min(tr['profitdollars'], stats['max_loss'])
+            num_loses += 1
+            total_loses += tr['profitdollars']
+            stats['max_loss_dollars'] = min(tr['profitdollars'], stats['max_loss_dollars'])
+            stats['max_loss_percent'] = min(tr['profitpercent'], stats['max_loss_percent'])
 
         if tr['putcall'] == "PUT":
             stats['put_count'] += 1
@@ -235,6 +245,9 @@ def daily_stats(day):
 
         stats['total_commission'] += tr['totalcommission']
         stats['total_fees'] += tr['totalfees']
+        stats['pandl'] += tr['profitdollars']
 
+    if num_loses:
+        stats['avg_loss_dollars'] = total_loses / num_loses
     stats['win_rate'] = stats['win_rate'] / stats['total_trades'] * 100
     return stats
