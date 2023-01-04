@@ -2,15 +2,11 @@ import time
 from datetime import datetime
 from flask import abort, Blueprint, current_app as app, jsonify, request
 from traderev import db
+from traderev.utils import flatten_dict
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
 
-def _flatten_dict(mappings, field):
-    """Takes in a list of dictionaries and returns a list of
-    values which are keyed by `field`.
-    """
-    return [d[field] for d in mappings]
 
 @bp.route("/transactions/", methods=["GET"])
 def transactions():
@@ -137,7 +133,7 @@ def update_trades():
     db.db.trades.create_index("openingdate", background=True)
     db.db.trades.create_index("closingdate", background=True)
     opening_trans_trades = db.get_trades_opening_transaction_ids()
-    opening_ids = _flatten_dict(opening_trans_trades, "id")
+    opening_ids = flatten_dict(opening_trans_trades, "id")
     opening_trans = db.get_opening_transactions()
     inserted_count = 0
     for tr in opening_trans:
@@ -172,7 +168,7 @@ def update_trades():
             app.logger.debug("Inserted trade %s", res.inserted_id)
 
     closing_trans_trades = db.get_trades_closing_transaction_ids()
-    closing_ids = _flatten_dict(closing_trans_trades, "id")
+    closing_ids = flatten_dict(closing_trans_trades, "id")
     all_closing_trans = db.get_closing_transactions()
     updated_count = 0
     for tr in all_closing_trans:
