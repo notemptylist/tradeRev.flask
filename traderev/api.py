@@ -1,8 +1,9 @@
 import time
+import pandas as pd
 from datetime import datetime
 from flask import abort, Blueprint, current_app as app, jsonify, request
 from traderev import db
-from traderev.utils import flatten_dict
+from traderev.utils import flatten_dict, week_range
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -206,44 +207,27 @@ def daily_stats(day):
     trades = db.get_closed_trades_by_date(day)
     if not trades:
         abort(404)
-    stats = {
-        'total_trades': len(trades),
-        'win_rate': 0,
-        'max_gain_dollars': 0,
-        'max_loss_dollars': 0,
-        'max_gain_percent': 0,
-        'max_loss_percent': 0,
-        'avg_loss_dollars': 0,
-        'avg_loss_percent': 0,
-        'put_count': 0,
-        'call_count': 0,
-        'total_commission': 0,
-        'total_fees': 0,
-        'pandl': 0,
-    }
-    total_loses = 0
-    num_loses = 0
-    for tr in trades:
-        if tr['profitdollars'] > 0:
-            stats['win_rate'] += 1
-            stats['max_gain_dollars'] = max(tr['profitdollars'], stats['max_gain_dollars'])
-            stats['max_gain_percent'] = max(tr['profitpercent'], stats['max_gain_percent'])
-        elif tr['profitdollars'] < 0:
-            num_loses += 1
-            total_loses += tr['profitdollars']
-            stats['max_loss_dollars'] = min(tr['profitdollars'], stats['max_loss_dollars'])
-            stats['max_loss_percent'] = min(tr['profitpercent'], stats['max_loss_percent'])
-
-        if tr['putcall'] == "PUT":
-            stats['put_count'] += 1
-        elif tr['putcall'] == "CALL":
-            stats['call_count'] += 1
-
-        stats['total_commission'] += tr['totalcommission']
-        stats['total_fees'] += tr['totalfees']
-        stats['pandl'] += tr['profitdollars']
-
-    if num_loses:
-        stats['avg_loss_dollars'] = total_loses / num_loses
-    stats['win_rate'] = stats['win_rate'] / stats['total_trades'] * 100
+    df = pd.DataFrame(trades)
+    stats = {}
+    stats['total_trades'] = df.shape[0]
+    stats['max_gain_dollars'] = df['profitdollars'].max()
+    stats['max_gain_percent'] = df['profitpercent'].max()
+    stats['max_loss_dollars'] = df['profitdollars'].min()
+    stats['max_loss_percent'] = df['profitpercent'].min()
+    stats['pandl'] = df['profitdollars'].sum()
+    stats['win_rate'] = len(df[df['profitdollars'] > 0]) / df.shape[0] * 100
+    stats['call_count'] = len(df[df['putcall'] == 'CALL'])
+    stats['put_count'] = len(df[df['putcall'] == 'PUT'])
+    stats['total_commission'] = df['totalcommission'].sum()
+    stats['total_fees'] = df['totalfees'].sum()
+    stats['avg_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].mean()
+    stats['avg_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].mean()
     return stats
+
+@bp.route("stats/weekly/<day>", methods=["GET"])
+def weekly_stats(day):
+    try:
+        start_date, end_date = week_range(day)
+    except ValueError:
+        abort(400)
+
