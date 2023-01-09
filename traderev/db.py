@@ -1,7 +1,7 @@
+from datetime import datetime
 from flask import current_app, g
 from flask_pymongo import PyMongo
 from werkzeug.local import LocalProxy
-from typing import List
 
 def get_db():
     """Configuration method to return a db instance
@@ -28,7 +28,16 @@ convert_transactiondate = {
         }
     }
 }
-
+convert_closing_date = {
+        "$addFields": {
+            "closeDate": {
+                "$dateToString": {
+                    "date": "$closingdate",
+                    "format": f"{date_fmt}"
+                }
+            }
+        }
+    }
 def get_transaction_by_id(trans_id):
     """Get one transaction by Id.
 
@@ -38,7 +47,7 @@ def get_transaction_by_id(trans_id):
     
     Parameters
     ----------
-    trans : int
+        trans_id : int
     """
     res = db.transactions.find({"id": trans_id}, {"_id": 0})
     return res
@@ -51,14 +60,14 @@ def get_all_transactions():
     .sort([("transactiondate", -1)])
     return list(res)
 
-def get_transactions_by_date(day):
+def get_transactions_by_date(day: str):
     """Get all transactions occuring on the specified day.
 
     Appends a new field called 'opendate' to each document.
 
     Parameters
     ----------
-    day : string
+        day : str
     """
     match_date = {"$match": {"openDate": f"{day}"}}
     project = {"$project": {"_id": 0}}
@@ -66,14 +75,14 @@ def get_transactions_by_date(day):
     res = db.transactions.aggregate(pipeline)
     return list(res)
 
-def get_opened_trades_by_date(day):
+def get_opened_trades_by_date(day: str):
     """Get all trades opened on the specified day.
 
-    Appends a new field called 'opendate' to each document.
+    Appends a new field named 'openDate' to each document.
 
     Parameters
     ----------
-    day : string
+        day : str
     """
     dateconvert = {
         "$addFields": {
@@ -91,29 +100,35 @@ def get_opened_trades_by_date(day):
     res = db.trades.aggregate(pipeline)
     return list(res)
 
-def get_closed_trades_by_date(day):
+def get_closed_trades_by_date_range(start: datetime, end: datetime):
+    """Get all trades closed between start and end dates.
+
+    Parameters
+    ----------
+        start : datetime
+        end : datetime
+    """
+    valid_date = {"$match" : {"closingdate": {"$ne": 0}}}
+    match_date = {"$match": {"closingdate": {"$gte": start, "$lte": end}}}
+    project = {"$project": {"_id": 0}}
+    
+    pipeline = [valid_date, match_date, project]
+    res = db.trades.aggregate(pipeline)
+    return list(res)
+
+def get_closed_trades_by_date(day: str):
     """Get all trades closed on the specified day.
 
     Appends a new field called 'closeDate' to each document.
 
     Parameters
     ----------
-    day : string
+        day : str
     """
     valid_date = {"$match": {"closingdate": {"$ne": 0}}}
-    dateconvert = {
-        "$addFields": {
-            "closeDate": {
-                "$dateToString": {
-                    "date": "$closingdate",
-                    "format": f"{date_fmt}"
-                }
-            }
-        }
-    }
     match_date = {"$match": {"closeDate": f"{day}"}}
     project = {"$project": {"_id": 0}}
-    pipeline = [valid_date, dateconvert, match_date, project]
+    pipeline = [valid_date, convert_closing_date, match_date, project]
     res = db.trades.aggregate(pipeline)
     return list(res)
 
@@ -127,7 +142,7 @@ def get_closing_transactions():
     """
     return get_transactions_by_effect("CLOSING")
 
-def get_transactions_by_effect(effect):
+def get_transactions_by_effect(effect: str):
     """Get transactions with matching positioneffect, mask _id in projection."""
     project = {"$project" : {"_id" : 0}}
     match_open = {"$match" : {"positioneffect": effect}}
@@ -163,7 +178,7 @@ def create_trade(trade_doc):
     res = db.trades.insert_one(trade_doc)
     return res
 
-def get_open_trade_for_symbol(symbol):
+def get_open_trade_for_symbol(symbol: str):
     """Get the open trade document for the specified symbol.
     """
     # pick the oldest trade for the symbol which is open
@@ -181,8 +196,8 @@ def close_trade_with_transaction(trade_id, tr):
 
     Parameters
     ----------
-    trade_id : ObjectId of trade
-    tr : transaction document
+        trade_id : ObjectId of trade
+        tr : transaction document
     """
     match = {"_id": trade_id}
     totalfees = tr['optregfee'] + tr['regfee'] + tr['additionalfee'] + \
@@ -213,13 +228,13 @@ def get_transactions_in_order(field='transactiondate', skip=0, limit=None):
 
     Parameters
     ----------
-    field : str A key to sort by
-    skip : int Number of records to skip
-    limit : int How many records to return
+        field : str A key to sort by
+        skip : int Number of records to skip
+        limit : int How many records to return
 
     Returns
     -------
-    res : A CommandCursor object
+        res : A CommandCursor object
     """
     match = {"processed": { "$ne": 1}}
     res = db.transactions.find(match).sort(field, 1).skip(skip).limit(limit)

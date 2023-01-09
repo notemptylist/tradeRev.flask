@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 from flask import abort, Blueprint, current_app as app, jsonify, request
 from traderev import db
-from traderev.utils import flatten_dict, week_range
+from traderev.utils import compute_basic_stats, flatten_dict, week_range
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -209,21 +209,7 @@ def daily_stats(day):
         abort(404)
     df = pd.DataFrame(trades)
     stats = {}
-    stats['total_trades'] = df.shape[0]
-    stats['max_gain_dollars'] = df['profitdollars'].max()
-    stats['max_gain_percent'] = df['profitpercent'].max()
-    stats['max_loss_dollars'] = df['profitdollars'].min()
-    stats['max_loss_percent'] = df['profitpercent'].min()
-    stats['pandl'] = df['profitdollars'].sum()
-    stats['win_rate'] = len(df[df['profitdollars'] > 0]) / df.shape[0] * 100
-    stats['call_count'] = len(df[df['putcall'] == 'CALL'])
-    stats['put_count'] = len(df[df['putcall'] == 'PUT'])
-    stats['total_commission'] = df['totalcommission'].sum()
-    stats['total_fees'] = df['totalfees'].sum()
-    stats['avg_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].mean()
-    stats['avg_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].mean()
-    stats['truepnl'] = stats['pandl'] - stats['total_commission'] - stats['total_fees']
-    return stats
+    return compute_basic_stats(df)
 
 @bp.route("stats/weekly/<day>", methods=["GET"])
 def weekly_stats(day):
@@ -231,4 +217,7 @@ def weekly_stats(day):
         start_date, end_date = week_range(day)
     except ValueError:
         abort(400)
-
+    app.logger.debug(f"Grabbing stats between {start_date} and {end_date}")
+    trades = db.get_closed_trades_by_date_range(start_date, end_date)
+    df = pd.DataFrame(trades)
+    return compute_basic_stats(df)

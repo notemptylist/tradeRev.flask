@@ -1,3 +1,4 @@
+import pandas as pd
 from typing import Any, Dict, List, Tuple
 from datetime import datetime, timedelta
 
@@ -35,7 +36,35 @@ def week_range(day: str) -> Tuple[datetime, datetime]:
             day = datetime.strptime(day, date_fmt_dashes)
         except ValueError:
             day = datetime.strptime(day, date_fmt_slashes)
-    week_start = day.date() - timedelta(day.weekday())
+    week_start = day - timedelta(day.weekday())
     week_end = week_start + timedelta(days=5)
 
     return (week_start, week_end) 
+
+def compute_basic_stats(df: pd.DataFrame):
+    """Computes basic trade statistics from a pandas dataframe.
+
+    Parameters
+    ----------
+        df : pd.DataFrame
+
+    Returns
+    -------
+        dict: A dictionary with statistics data
+    """
+    stats = {}
+    stats['total_trades'] = df.shape[0]
+    stats['max_gain_dollars'] = df['profitdollars'].max()
+    stats['max_gain_percent'] = df['profitpercent'].max()
+    stats['max_loss_dollars'] = df['profitdollars'].min()
+    stats['max_loss_percent'] = df['profitpercent'].min()
+    stats['pandl'] = df['profitdollars'].sum()
+    stats['win_rate'] = len(df[df['profitdollars'] > 0]) / df.shape[0] * 100
+    stats['call_count'] = len(df[df['putcall'] == 'CALL'])
+    stats['put_count'] = len(df[df['putcall'] == 'PUT'])
+    stats['total_commission'] = df['totalcommission'].sum()
+    stats['total_fees'] = df['totalfees'].sum()
+    stats['avg_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].mean()
+    stats['avg_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].mean()
+    stats['truepnl'] = stats['pandl'] - stats['total_commission'] - stats['total_fees']
+    return stats
