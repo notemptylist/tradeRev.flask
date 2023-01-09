@@ -222,6 +222,7 @@ def daily_stats(day):
     stats['total_fees'] = df['totalfees'].sum()
     stats['avg_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].mean()
     stats['avg_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].mean()
+    stats['truepnl'] = stats['pandl'] - stats['total_commission'] - stats['total_fees']
     return stats
 
 @bp.route("stats/weekly/<day>", methods=["GET"])
