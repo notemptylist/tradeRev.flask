@@ -219,5 +219,7 @@ def weekly_stats(day):
         abort(400)
     app.logger.debug(f"Grabbing stats between {start_date} and {end_date}")
     trades = db.get_closed_trades_by_date_range(start_date, end_date)
+    if not len(trades):
+        abort(404)
     df = pd.DataFrame(trades)
     return compute_basic_stats(df)
