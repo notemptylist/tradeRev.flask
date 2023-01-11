@@ -64,7 +64,8 @@ def compute_basic_stats(df: pd.DataFrame):
     stats['put_count'] = len(df[df['putcall'] == 'PUT'])
     stats['total_commission'] = df['totalcommission'].sum()
     stats['total_fees'] = df['totalfees'].sum()
-    stats['avg_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].mean()
-    stats['avg_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].mean()
+    if any(df['profitdollars'] <0):
+        stats['avg_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].mean()
+        stats['avg_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].mean()
     stats['truepnl'] = stats['pandl'] - stats['total_commission'] - stats['total_fees']
     return stats
