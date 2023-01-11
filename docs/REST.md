@@ -38,3 +38,7 @@ Trades are created from existing transactions.
 > GET /api/stats/weekly/{2006-01-02}
 3. TBD
 
+---
+**Misc**
+1. Create and return a date based table of contents
+> POST /utils/datetoc -> [{'year':2022, 'month': 10}, ...]

@@ -1,13 +1,11 @@
 import time
 import pandas as pd
 from datetime import datetime
-from flask import abort, Blueprint, current_app as app, jsonify, request
+from flask import abort, Blueprint, current_app as app, make_response, request
 from traderev import db
 from traderev.utils import compute_basic_stats, flatten_dict, week_range
 
 bp = Blueprint("api", __name__, url_prefix="/api")
-
-
 
 @bp.route("/transactions/", methods=["GET"])
 def transactions():
@@ -211,7 +209,7 @@ def daily_stats(day):
     stats = {}
     return compute_basic_stats(df)
 
-@bp.route("stats/weekly/<day>", methods=["GET"])
+@bp.route("/stats/weekly/<day>", methods=["GET"])
 def weekly_stats(day):
     try:
         start_date, end_date = week_range(day)
@@ -223,3 +221,8 @@ def weekly_stats(day):
         abort(404)
     df = pd.DataFrame(trades)
     return compute_basic_stats(df)
+
+@bp.route("/utils/datetoc", methods=["POST"] )
+def make_date_toc():
+    res = db.make_trades_toc()
+    return make_response(list(res), 202)

@@ -1,7 +1,9 @@
+from copy import deepcopy
 from datetime import datetime
 from flask import current_app, g
 from flask_pymongo import PyMongo
 from werkzeug.local import LocalProxy
+from .utils import flatten_dict
 
 def get_db():
     """Configuration method to return a db instance
@@ -84,7 +86,7 @@ def get_opened_trades_by_date(day: str):
     ----------
         day : str
     """
-    dateconvert = {
+    date_convert = {
         "$addFields": {
             "openDate": {
                 "$dateToString": {
@@ -96,7 +98,7 @@ def get_opened_trades_by_date(day: str):
     }
     match_date = {"$match": {"openDate": f"{day}"}}
     project = {"$project": {"_id": 0}}
-    pipeline = [dateconvert, match_date, project]
+    pipeline = [date_convert, match_date, project]
     res = db.trades.aggregate(pipeline)
     return list(res)
 
@@ -111,7 +113,7 @@ def get_closed_trades_by_date_range(start: datetime, end: datetime):
     valid_date = {"$match" : {"closingdate": {"$ne": 0}}}
     match_date = {"$match": {"closingdate": {"$gte": start, "$lte": end}}}
     project = {"$project": {"_id": 0}}
-    
+
     pipeline = [valid_date, match_date, project]
     res = db.trades.aggregate(pipeline)
     return list(res)
@@ -271,3 +273,34 @@ def update_trades_profits():
         }
     }]
     return db.trades.update_many(match, update)
+
+def make_trades_toc():
+    """Create a collection which serves as a table of contents, organized by year
+    and month, for related trades.
+    """
+    select_dates = {"$match" : {"openingdate": {"$ne": 0}}}
+    split_year_month = {
+        "$addFields": {
+            "year": {
+                "$year": "$openingdate"
+            },
+            "month": {
+                "$month": "$openingdate"
+            }
+        }
+    }
+    project_dates = {"$project": {"year": 1, "month": 1, "_id": 0}}
+    group_dates = {"$group": {"_id": {"year": "$year", "month": "$month"}}}
+    sort_dates = {"$sort": {"_id.year": 1, "_id.month": 1}}
+    pipeline = [
+        select_dates, split_year_month, project_dates, group_dates, sort_dates
+    ]
+    res = db.trades.aggregate(pipeline)
+    flat_list = flatten_dict(list(res), field="_id")
+
+    # TODO: maybe create this permanently and add a unique index
+    db.trades_date_toc.drop()
+    # NOTE: insert_many() modifies the passed in parameter.
+    to_insert = deepcopy(flat_list)
+    res = db.trades_date_toc.insert_many(to_insert)
+    return flat_list
