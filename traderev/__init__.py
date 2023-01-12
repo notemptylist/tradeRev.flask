@@ -1,5 +1,5 @@
 import os
-from flask import Flask, Blueprint
+from flask import Flask, redirect
 from werkzeug.middleware.profiler import ProfilerMiddleware
 
 
@@ -30,5 +30,8 @@ def create_app(test_config=None):
     from . import frontend
     app.register_blueprint(api.bp)
     app.register_blueprint(frontend.bp)
+    @app.errorhandler(404)
+    def not_found_redirect(e):
+        return redirect('/', 302)
     # app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir=profiles_path)
     return app
