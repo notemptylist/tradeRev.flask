@@ -1,9 +1,11 @@
+import json
 import time
 import pandas as pd
 from datetime import datetime
 from flask import abort, Blueprint, current_app as app, make_response, request
 from traderev import db
 from traderev.utils import compute_basic_stats, flatten_dict, week_range
+from traderev.schemas import LogEntryType, UtilityLogEntry
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -185,15 +187,26 @@ def update_trades():
         db.close_trade_with_transaction(trade['_id'], tr)
         updated_count += 1
     elapsed_time = time.time() - start_time
-    return f"Inserted {inserted_count} new trades\nUpdated {updated_count} trades.\nElapsed: {elapsed_time}"
+    message =  f"Inserted {inserted_count} new trades\nUpdated {updated_count} trades.\nElapsed: {elapsed_time}"
+    event_entry = UtilityLogEntry(logtype=LogEntryType("Trades"),
+                                  timestamp=datetime.utcnow(),
+                                  author="/trades/ API",
+                                  message=message)
+    db.add_utility_event(event_entry)
+    return message
 
 @bp.route("/trades/profits", methods=["POST"])
 def update_trade_profits():
     res = db.update_trades_profits()
     output = {
-        "matched_count": res.matched_count,
-        "modified_count": res.modified_count,
+        "matched_trades": res.matched_count,
+        "updated_trades": res.modified_count,
     }
+    event_entry = UtilityLogEntry(logtype=LogEntryType("Profits"),
+                                  timestamp=datetime.utcnow(),
+                                  author="/trades/profits API",
+                                  message=json.dumps(output))
+    db.add_utility_event(event_entry)
     return output
 
 @bp.route("/stats/daily/<day>", methods=["GET"])

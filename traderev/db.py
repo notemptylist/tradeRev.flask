@@ -304,3 +304,9 @@ def make_trades_toc():
     to_insert = deepcopy(flat_list)
     res = db.trades_date_toc.insert_many(to_insert)
     return flat_list
+
+def add_utility_event(entry):
+    """Add the event log entry to the utilitylog collection.
+    """
+    res = db.utilitylog.insert_one(entry.toDoc())
+    return res
