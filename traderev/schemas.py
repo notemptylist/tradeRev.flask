@@ -11,7 +11,7 @@ class LogEntryType(StrEnum):
 
 class UtilityLogEntry():
 
-    def __init__(self, logtype: LogEntryType, timestamp: datetime, message: str = None, author: str = None ) -> Self:
+    def __init__(self, logtype: LogEntryType, timestamp: datetime = None, message: str = None, author: str = None ) -> Self:
         """
         Parameters:
         logtype (LogEntryType): One of the enumerated log entry types.
@@ -20,7 +20,7 @@ class UtilityLogEntry():
         author (str): Identifier of the person or system that initiated the event.
         """
         self.logtype = logtype
-        self.timestamp = timestamp or datetime.now()
+        self.timestamp = timestamp or datetime.utcnow()
         self.author = author
         self.message = message
 
