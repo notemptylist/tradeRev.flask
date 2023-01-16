@@ -11,6 +11,8 @@ Operations which we need:
 > GET /api/transactions/{id} -> a single transaction with id = {id}  
 3. Retrieve transactions by date 
 > GET /api/transactions/daily/{2006-01-02} -> [ transactions where transactiondate is on specified date ] 
+4. Add a tag to a transaction by ID
+> POST /api/transactions/{id}/tags  <- { 'tag': 'foobar'} 
 ---
 
 **Trades**  
@@ -28,6 +30,8 @@ Trades are created from existing transactions.
 > GET /api/trades/dayrange?from=2006-01-02&to=2006-02-01
 6. Run a batch job to update the profit fiels of all trades.
 > POST /api/trades/profits
+4. Add a tag to a trade by ID
+> POST /api/trades/{id}/tags  <- { 'tag': 'foobar'} 
 
 ---
 **Stats** 
@@ -42,3 +46,6 @@ Trades are created from existing transactions.
 **Misc**
 1. Create and return a date based table of contents
 > POST /utils/datetoc -> [{'year':2022, 'month': 10}, ...]
+2. Get entries from the utilitylog.
+> GET /utils/log?type={import|profits|trades}?count=5
+
