@@ -235,7 +235,19 @@ def weekly_stats(day):
     df = pd.DataFrame(trades)
     return compute_basic_stats(df)
 
-@bp.route("/utils/datetoc", methods=["POST"] )
+@bp.route("/utils/datetoc", methods=["POST"])
 def make_date_toc():
     res = db.make_trades_toc()
     return make_response(list(res), 202)
+
+@bp.route("/utils/log", methods=["GET"])
+def utility_log():
+    event_type = request.args['type']
+    try:
+        event_count = int(request.args['count'])
+    except (ValueError, KeyError):
+        abort(400)
+    if event_count <1:
+        abort(400)
+    res = db.get_utility_events(event_type, event_count)
+    return list(res) 

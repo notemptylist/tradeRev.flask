@@ -310,3 +310,9 @@ def add_utility_event(entry):
     """
     res = db.utilitylog.insert_one(entry.toDoc())
     return res
+
+def get_utility_events(event_type, event_count):
+    """Fetch a number of events of a certain type.
+    """
+    res = db.utilitylog.find({"logtype": event_type}, {"_id": 0}).limit(event_count)
+    return res
