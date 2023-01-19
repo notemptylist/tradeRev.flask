@@ -187,10 +187,14 @@ def update_trades():
         db.close_trade_with_transaction(trade['_id'], tr)
         updated_count += 1
     elapsed_time = time.time() - start_time
-    message =  f"Inserted {inserted_count} new trades\nUpdated {updated_count} trades.\nElapsed: {elapsed_time}"
+    message = [
+        f"Inserted {inserted_count} new trades",
+        f"Updated {updated_count} trades",
+        f"Elapsed {elapsed_time:.2f}s",
+    ]
     event_entry = UtilityLogEntry(logtype=LogEntryType("Trades"),
                                   timestamp=datetime.utcnow(),
-                                  author="/trades/ API",
+                                  author="/trades API",
                                   message=message)
     db.add_utility_event(event_entry)
     return message
@@ -198,14 +202,14 @@ def update_trades():
 @bp.route("/trades/profits", methods=["POST"])
 def update_trade_profits():
     res = db.update_trades_profits()
-    output = {
-        "matched_trades": res.matched_count,
-        "updated_trades": res.modified_count,
-    }
+    output = [
+        f"Matched {res.matched_count} trades",
+        f"Updated {res.modified_count} trades",
+    ]
     event_entry = UtilityLogEntry(logtype=LogEntryType("Profits"),
                                   timestamp=datetime.utcnow(),
                                   author="/trades/profits API",
-                                  message=json.dumps(output))
+                                  message=output)
     db.add_utility_event(event_entry)
     return output
 
@@ -250,4 +254,4 @@ def utility_log():
     if event_count <1:
         abort(400)
     res = db.get_utility_events(event_type, event_count)
-    return list(res) 
+    return list(res)
