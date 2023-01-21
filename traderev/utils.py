@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import Any, Dict, List, Tuple
 from datetime import datetime, timedelta
+from dateutil.rrule import rrule, WEEKLY
 
 def flatten_dict(mappings: List[Dict], field: str) -> List[Any]:
     """Takes in a list of dictionaries and returns a list of
@@ -39,7 +40,7 @@ def week_range(day: str) -> Tuple[datetime, datetime]:
     week_start = day - timedelta(day.weekday())
     week_end = week_start + timedelta(days=5)
 
-    return (week_start, week_end) 
+    return (week_start, week_end)
 
 def compute_basic_stats(df: pd.DataFrame):
     """Computes basic trade statistics from a pandas dataframe.
@@ -69,3 +70,17 @@ def compute_basic_stats(df: pd.DataFrame):
         stats['avg_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].mean()
     stats['truepnl'] = stats['pandl'] - stats['total_commission'] - stats['total_fees']
     return stats
+
+def weeks_of_year(year: int, until: datetime) -> List[datetime]:
+    """Return a list of Monday dates within the given year, up to given date.
+
+    Parameters
+    ----------
+        year : int Year in int format.
+        until : datetime of ending date.
+    Returns:
+        list[datetime]
+    """
+    first = datetime(year, 1, 1)
+    num_weeks = len(list(rrule(WEEKLY, dtstart=first, until=until)))
+    return [datetime.fromisocalendar(year, w, 1) for w in range(1, num_weeks)]
