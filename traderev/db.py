@@ -314,5 +314,5 @@ def add_utility_event(entry):
 def get_utility_events(event_type, event_count):
     """Fetch a number of events of a certain type.
     """
-    res = db.utilitylog.find({"logtype": event_type}, {"_id": 0}).limit(event_count)
+    res = db.utilitylog.find({"logtype": event_type}, {"_id": 0}).sort("timestamp", -1).limit(event_count)
     return res
