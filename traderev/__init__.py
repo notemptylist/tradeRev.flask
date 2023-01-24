@@ -1,7 +1,14 @@
 import os
+import sys
+import configparser
 from flask import Flask, redirect
 from werkzeug.middleware.profiler import ProfilerMiddleware
 
+mongo_config_fmt = """[default]
+mongo_uri=<url>
+db_name=traderev
+transactions_col=transactions
+"""
 
 def create_app(test_config=None):
     """Flask app factory"""
@@ -34,4 +41,15 @@ def create_app(test_config=None):
     def not_found_redirect(e):
         return redirect('/', 302)
     # app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir=profiles_path)
+
+    config_file = os.environ.get('MONGO_INI', None)
+    if not config_file:
+        print("MONGO_INI environment variable needs to be set to a mongo config file.")
+        print("Using the following format:")
+        print(mongo_config_fmt)
+        sys.exit(1)
+
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    app.config['MONGO_URI'] = config['default']['mongo_uri']
     return app
