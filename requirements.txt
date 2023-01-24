@@ -1,4 +1,5 @@
 Flask
+Flask-PyMongo
+gunicorn[gevent]
 pandas
 pymongo[srv]
-Flask-PyMongo
