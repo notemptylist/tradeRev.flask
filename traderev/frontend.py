@@ -7,7 +7,10 @@ bp = Blueprint('frontend', __name__, static_folder=static_folder)
 @bp.route('/static/<path:path>')
 def serve_static(path):
     print(f"Serving static path: '{path}'")
-    return send_from_directory(os.path.join(bp.static_folder,'static'), path)
+    actual_static_dir = os.path.join(bp.static_folder, 'static')
+    target = os.path.join(bp.static_folder, 'static', path)
+    if os.path.exists(target):
+        return send_from_directory(actual_static_dir, path)
 
 @bp.route('/', defaults={'path':''})
 def serve(path):
