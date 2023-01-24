@@ -1,0 +1,2 @@
+recursive-include traderev/frontend/build *
+global-exclude *.pyc
