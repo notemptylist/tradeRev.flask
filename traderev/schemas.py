@@ -1,17 +1,16 @@
 """Some document collections will have a strict structure.
 """
-from typing import Self
-from enum import StrEnum
+from enum import Enum
 from datetime import datetime
 
-class LogEntryType(StrEnum):
+class LogEntryType(Enum):
     Import = "Import" # import of transactions
     Profits = "Profits" # Update of profits
     Trades = "Trades" # Creation or update of trades
 
 class UtilityLogEntry():
 
-    def __init__(self, logtype: LogEntryType, timestamp: datetime = None, message: str = None, author: str = None ) -> Self:
+    def __init__(self, logtype: LogEntryType, timestamp: datetime = None, message: str = None, author: str = None ):
         """
         Parameters:
         logtype (LogEntryType): One of the enumerated log entry types.
