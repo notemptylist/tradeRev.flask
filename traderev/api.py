@@ -1,4 +1,3 @@
-import json
 import time
 import pandas as pd
 from datetime import datetime
@@ -12,7 +11,7 @@ bp = Blueprint("api", __name__, url_prefix="/api")
 @bp.route("/transactions/", methods=["GET"])
 def transactions():
     res = db.get_all_transactions()
-    return res
+    return list(res)
 
 @bp.route("/transactions/<int:trans_id>", methods=["GET"])
 def transaction_by_id(trans_id):
@@ -20,7 +19,7 @@ def transaction_by_id(trans_id):
     try:
         trans_id = int(trans_id)
     except ValueError:
-        return None
+        abort(400)
     res = db.get_transaction_by_id(trans_id)
     return res
 

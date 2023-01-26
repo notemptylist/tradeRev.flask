@@ -60,7 +60,7 @@ def get_all_transactions():
     """
     res = db.transactions.find({}, {"_id": 0}) \
     .sort([("transactiondate", -1)])
-    return list(res)
+    return res
 
 def get_transactions_by_date(day: str):
     """Get all transactions occuring on the specified day.
