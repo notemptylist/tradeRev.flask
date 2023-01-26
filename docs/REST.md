@@ -5,14 +5,14 @@
 
 ## Resources
 
-1. Transactions - Transactions are the individual processed orders.
-1. Trades - Trades are the result of a group of transactions (Sell + Buy, Buy + Sell)
-1. Stats - Statistics for days and weeks.
-1. Weeks - Calendar weeks in which transactions and trades occur.
-1. Days - Days in which transactions and trades occur.
+1. [Transactions](#Transactions) - Transactions are the individual processed orders.
+1. [Trades](#Trades) - Trades are the result of a group of transactions (Sell + Buy, Buy + Sell)
+1. [Stats](#Stats) - Statistics for days and weeks.
+1. [Weeks](#Weeks) - Calendar weeks in which transactions and trades occur.
+1. [Days](#Days) - Days in which transactions and trades occur.
 
 Other endpoints
-1. Utils - A collection of APIs which don't map well to the other resources.
+1. [Utils](#Utils) - A collection of APIs which don't map well to the other resources.
 
 ### Transactions
 
