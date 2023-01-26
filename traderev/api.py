@@ -24,13 +24,16 @@ def transaction_by_id(trans_id):
     res = db.get_transaction_by_id(trans_id)
     return res
 
-@bp.route("/transactions/daily/<date>", methods=["GET"])
-def transaction_by_date(date):
+@bp.route("/transactions/daily", methods=["GET"])
+def transaction_by_date():
     """List transactions by date.
     """
+    if not 'day' in request.args:
+        abort(400)
     try:
-        day = datetime.strptime(date, db.date_fmt).date()
-    except ValueError:
+        day = request.args['day']
+        day = datetime.strptime(day, db.date_fmt).date()
+    except (ValueError, KeyError):
         abort(400)
     res = db.get_transactions_by_date(day)
     if not res:
