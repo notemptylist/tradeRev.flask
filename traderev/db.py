@@ -51,7 +51,7 @@ def get_transaction_by_id(trans_id):
     ----------
         trans_id : int
     """
-    res = db.transactions.find({"id": trans_id}, {"_id": 0})
+    res = db.transactions.find_one({"id": trans_id}, {"_id": 0})
     return res
 
 def get_all_transactions():
