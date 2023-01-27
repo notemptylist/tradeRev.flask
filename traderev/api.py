@@ -27,8 +27,6 @@ def transaction_by_id(trans_id):
 def transaction_by_date():
     """List transactions by date.
     """
-    if not 'day' in request.args:
-        abort(400)
     try:
         day = request.args['day']
         day = datetime.strptime(day, db.date_fmt).date()
@@ -39,13 +37,14 @@ def transaction_by_date():
         abort(404)
     return res
 
-@bp.route("/trades/daily/<date>", methods=["GET"])
-def trades_by_date(date):
+@bp.route("/trades/daily", methods=["GET"])
+def trades_by_date():
     """List trades by specified date.
     """
     try:
-        day = datetime.strptime(date, db.date_fmt).date()
-    except ValueError:
+        day = request.args['day']
+        day = datetime.strptime(day, db.date_fmt).date()
+    except (ValueError, KeyError):
         abort(400)
     if 'opened' in request.args:
         res = db.get_opened_trades_by_date(day)
