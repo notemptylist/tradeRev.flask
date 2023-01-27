@@ -18,15 +18,15 @@ Other endpoints
 
 With the exception of tags, individual properties of Transactions are immutable.
 
-1. Retrieve all transactions.   
+1. - [x] Retrieve all transactions.    
 ```GET /api/transactions -> [ ]```
-3. Retrieve a single transaction by ID (_transactionid_ not _id).   
+1. - [x] Retrieve a single transaction by ID (_transactionid_ not _id).   
 ```GET /api/transactions/{id} -> a single transaction with id = {id} ``` 
-1. Retrieve transactions by date.  
+1. - [x] Retrieve transactions by date.  
 ```GET /api/transactions/daily?day={2006-01-02} -> [ transactions where transactiondate is on specified date ] ```
-1. Add a tag to a transaction by ID.  
+1. - [ ] Add a tag to a transaction by ID.  
 ```POST /api/transactions/{id}/tags  <- { 'tag': 'foobar'} ```
-1. Remove a tag from a transaction.  
+1. - [ ] Remove a tag from a transaction.  
 ```DELETE /api/transactions/{id}/tags <- { 'tag': 'tagtoremove' }```
 ---
 
@@ -34,30 +34,32 @@ With the exception of tags, individual properties of Transactions are immutable.
 
 Trades are formed from existing transactions.  With the exception of tags, individual properties of Trades are immutable.
 
-1. Run a batch job to update trades from existing transactions.  
+1. - [x] Run a batch job to update trades from existing transactions.  
 ```POST /api/trades```
-3. Retrieve all trades.  
+1. - [ ] Retrieve all trades.  
 ```GET /api/trades -> [ ]```
-4. Retrieve trades by ID.   
+1. - [ ] Retrieve trades by ID.   
 ```GET /api/trades/{id} -> single trade with id = {id}```
-5. Retrieve trades opened on specified date.  
-```GET /api/trades/daily?day={2006-01-02} -> [ trades which were **closed** on date ]```
-6. Retrieve trades closed between two dates.  
+1. - [x] Retrieve trades opened on specified date.  
+```GET /api/trades/daily?day={2006-01-02}&opened -> [ trades which were ***opened*** on date ]```
+1. - [x] Retrieve trades closed on specified date.  
+```GET /api/trades/daily?day={2006-01-02}&closed -> [ trades which were ***closed*** on date ]```
+1. - [ ] Retrieve trades closed between two dates.  
 ```GET /api/trades/dayrange?from=2006-01-02&to=2006-02-01```
-7. Run a batch job to update the profit fiels of all trades.  
+1. - [ ] Run a batch job to update the profit fiels of all trades.  
 ```POST /api/trades/profits```
-8. Add a tag to a trade by ID.  
+1. - [ ] Add a tag to a trade by ID.  
 ```POST /api/trades/{id}/tags  <- { 'tag': 'important'}``` 
-9. Remove a tag from a trade object.     
+1. - [ ] Remove a tag from a trade object.     
 ```DELETE /api/trades/{id}/tags <- { 'tag': 'extraneous' }```
 
 ---
 
 ### Stats
 
-1. Compute statistics for the day.   
+1. - [ ] Compute statistics for the day.   
 ```GET /api/stats/daily?day={2006-01-02}```
-1. Compute and return weekly stats for the week containing the specified day.  
+1. - [ ] Compute and return weekly stats for the week containing the specified day.  
 ```GET /api/stats/weekly?week={2006-01-02}```
 1. TBD
 
@@ -80,19 +82,19 @@ Weeks are identified by the Monday date.
         ]
     }            
 ```
-1. Get one week.  
+1. - [ ] Get one week.  
 ```GET /api/weeks/{week_day}```
-3. Get a list of weeks for the given year.  
+3. - [ ] Get a list of weeks for the given year.  
 ```GET /api/weeks/yearly?year=2022 -> [list of weeks]```
-1. Get the week containing a single date.  
+1. - [ ] Get the week containing a single date.  
 ```GET /api/weeks/daily?day=2022-01-06```
-1. Add a tag to a specific week.    
+1. - [ ] Add a tag to a specific week.    
 ```POST /api/weeks/{week_day}/tags <- {'tag': 'foobar'}```
-1. Remove a specific tag from a week.  
+1. - [ ] Remove a specific tag from a week.  
 ```DELETE /api/weeks/{week_day}/tags <- {'tag': 'tagtoremove'}```
-1. Add a memo to a specific week.    
+1. - [ ] Add a memo to a specific week.    
 ```POST /api/weeks/{week_day}/memos <- {'memo': 'A sample memo' }```
-1. Remove a memo from a specific week by memo id.  
+1. - [ ] Remove a memo from a specific week by memo id.  
 ```DELETE /api/weeks/{week_day}/memos/<id>```
 ---
 
@@ -112,15 +114,15 @@ Weeks are identified by the Monday date.
     }
 ```
 
-1. Get a specific trading day.  
+1. - [ ] Get a specific trading day.  
 ```GET /api/days/{2022-01-06}```
-1. Add a tag to a specific day.  
+1. - [ ] Add a tag to a specific day.  
 ```POST /api/days/{day}/tags <- {'tag': 'foobar'}```
-1. Remove a specific tag from a day.  
+1. - [ ] Remove a specific tag from a day.  
 ```DELETE /api/days/{day}/tags <- {'tag': 'tagtoremove'}```
-1. Add a memo to a specific day.  
+1. - [ ] Add a memo to a specific day.  
 ```POST /api/days/{day}/memos <- {'memo': 'A sample memo' }```
-1. Remove a memo from a specific day by memo id.  
+1. - [ ] Remove a memo from a specific day by memo id.  
 ```DELETE /api/days/{day}/memos/<id>```
 
 
@@ -128,8 +130,7 @@ Weeks are identified by the Monday date.
 
 ### Utils
 
-1. Create and return a date based table of contents.  
+1. - [ ] Create and return a date based table of contents.  
 ```POST /utils/datetoc -> [{'year':2022, 'month': 10}, ...]```
-1. Get entries from the utilitylog.  
+1. - [ ] Get entries from the utilitylog.  
 ```GET /utils/log?type={import|profits|trades}?count=5```
-
