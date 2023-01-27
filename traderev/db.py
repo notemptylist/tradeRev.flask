@@ -97,10 +97,9 @@ def get_opened_trades_by_date(day: str):
         }
     }
     match_date = {"$match": {"openDate": f"{day}"}}
-    project = {"$project": {"_id": 0}}
-    pipeline = [date_convert, match_date, project]
+    pipeline = [date_convert, match_date]
     res = db.trades.aggregate(pipeline)
-    return list(res)
+    return res
 
 def get_closed_trades_by_date_range(start: datetime, end: datetime):
     """Get all trades closed between start and end dates.
@@ -112,9 +111,8 @@ def get_closed_trades_by_date_range(start: datetime, end: datetime):
     """
     valid_date = {"$match" : {"closingdate": {"$ne": 0}}}
     match_date = {"$match": {"closingdate": {"$gte": start, "$lte": end}}}
-    project = {"$project": {"_id": 0}}
 
-    pipeline = [valid_date, match_date, project]
+    pipeline = [valid_date, match_date]
     res = db.trades.aggregate(pipeline)
     return list(res)
 

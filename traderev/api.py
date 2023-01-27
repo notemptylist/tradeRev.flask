@@ -54,7 +54,12 @@ def trades_by_date():
         abort(400)
     if not res:
         abort(404)
-    return res
+    converted = []
+    for trade in res:
+        trade['_id'] = str(trade['_id'])
+        converted.append(trade)
+
+    return converted
 
 @bp.route("/trades/v2", methods=["POST"])
 def update_trades_v2():
