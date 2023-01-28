@@ -3,6 +3,7 @@ import sys
 import configparser
 from flask import Flask, redirect
 from werkzeug.middleware.profiler import ProfilerMiddleware
+from .utils import CustomJSONEncoder
 
 mongo_config_fmt = """[default]
 mongo_uri=<url>
@@ -37,9 +38,9 @@ def create_app(test_config=None):
     from . import frontend
     app.register_blueprint(api.bp)
     app.register_blueprint(frontend.bp)
-    @app.errorhandler(404)
-    def not_found_redirect(e):
-        return redirect('/', 302)
+    # @app.errorhandler(404)
+    # def not_found_redirect(e):
+    #     return redirect('/', 302)
     # app.wsgi_app = ProfilerMiddleware(app.wsgi_app, profile_dir=profiles_path)
 
     config_file = os.environ.get('MONGO_INI', None)
@@ -49,6 +50,7 @@ def create_app(test_config=None):
         print(mongo_config_fmt)
         sys.exit(1)
 
+    app.json_encoder = CustomJSONEncoder
     config = configparser.ConfigParser()
     config.read(config_file)
     app.config['MONGO_URI'] = config['default']['mongo_uri']

@@ -2,6 +2,15 @@ import pandas as pd
 from typing import Any, Dict, List, Tuple
 from datetime import datetime, timedelta
 from dateutil.rrule import rrule, WEEKLY
+from flask.json import JSONEncoder
+from bson import ObjectId
+
+class CustomJSONEncoder(JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, ObjectId):
+            return str(obj)
+        return JSONEncoder.default(self, obj)
 
 def flatten_dict(mappings: List[Dict], field: str) -> List[Any]:
     """Takes in a list of dictionaries and returns a list of
