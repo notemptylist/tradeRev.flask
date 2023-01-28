@@ -4,6 +4,8 @@ from flask import current_app, g
 from flask_pymongo import PyMongo
 from werkzeug.local import LocalProxy
 from .utils import flatten_dict
+from bson import ObjectId
+from bson.errors import InvalidId
 
 def get_db():
     """Configuration method to return a db instance
@@ -75,7 +77,22 @@ def get_transactions_by_date(day: str):
     project = {"$project": {"_id": 0}}
     pipeline = [convert_transactiondate, match_date, project]
     res = db.transactions.aggregate(pipeline)
-    return list(res)
+    return res
+
+def get_all_trades():
+    """Get all trades in the trades collection.
+    """
+    return db.trades.find()
+
+def get_trade_by_id(trade_id: str):
+    """Get all trades in the trades collection.
+    """
+    try:
+        trade_id = ObjectId(trade_id)
+    except InvalidId:
+        return None 
+    return db.trades.find_one({"_id": trade_id})
+
 
 def get_opened_trades_by_date(day: str):
     """Get all trades opened on the specified day.

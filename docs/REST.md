@@ -36,9 +36,9 @@ Trades are formed from existing transactions.  With the exception of tags, indiv
 
 1. - [x] Run a batch job to update trades from existing transactions.  
 ```POST /api/trades```
-1. - [ ] Retrieve all trades.  
+1. - [x] Retrieve all trades.  
 ```GET /api/trades -> [ ]```
-1. - [ ] Retrieve trades by ID.   
+1. - [x] Retrieve trades by ID.   
 ```GET /api/trades/{id} -> single trade with id = {id}```
 1. - [x] Retrieve trades opened on specified date.  
 ```GET /api/trades/daily?day={2006-01-02}&opened -> [ trades which were ***opened*** on date ]```
@@ -46,7 +46,7 @@ Trades are formed from existing transactions.  With the exception of tags, indiv
 ```GET /api/trades/daily?day={2006-01-02}&closed -> [ trades which were ***closed*** on date ]```
 1. - [ ] Retrieve trades closed between two dates.  
 ```GET /api/trades/dayrange?from=2006-01-02&to=2006-02-01```
-1. - [ ] Run a batch job to update the profit fiels of all trades.  
+1. - [ ] Run a batch job to update the profit fields of all trades.  
 ```POST /api/trades/profits```
 1. - [ ] Add a tag to a trade by ID.  
 ```POST /api/trades/{id}/tags  <- { 'tag': 'important'}``` 

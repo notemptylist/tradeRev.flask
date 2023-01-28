@@ -7,8 +7,7 @@ from traderev.utils import compute_basic_stats, flatten_dict, week_range
 from traderev.schemas import LogEntryType, UtilityLogEntry
 
 bp = Blueprint("api", __name__, url_prefix="/api")
-
-@bp.route("/transactions/", methods=["GET"])
+@bp.route("/transactions", methods=["GET"])
 def transactions():
     res = db.get_all_transactions()
     return list(res)
@@ -21,6 +20,8 @@ def transaction_by_id(trans_id):
     except ValueError:
         abort(400)
     res = db.get_transaction_by_id(trans_id)
+    if not res:
+        abort(404)
     return res
 
 @bp.route("/transactions/daily", methods=["GET"])
@@ -35,7 +36,25 @@ def transaction_by_date():
     res = db.get_transactions_by_date(day)
     if not res:
         abort(404)
-    return res
+    return list(res)
+
+@bp.route("/trades", methods=["GET"])
+def get_all_trades():
+    """Return all trades.
+    """
+    res = db.get_all_trades()
+    if not res:
+        abort(404)
+    return list(res)
+
+@bp.route("/trades/<string:trade_id>", methods=["GET"])
+def get_trade_by_id(trade_id):
+    """Return trade by ID.
+    """
+    res = db.get_trade_by_id(trade_id)
+    if not res:
+        abort(404)
+    return res 
 
 @bp.route("/trades/daily", methods=["GET"])
 def trades_by_date():
@@ -54,12 +73,7 @@ def trades_by_date():
         abort(400)
     if not res:
         abort(404)
-    converted = []
-    for trade in res:
-        trade['_id'] = str(trade['_id'])
-        converted.append(trade)
-
-    return converted
+    return list(res)
 
 @bp.route("/trades/v2", methods=["POST"])
 def update_trades_v2():
