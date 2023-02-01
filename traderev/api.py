@@ -320,10 +320,6 @@ def add_tag_to_week(day):
         tag = request.args['tag']
     except KeyError:
         abort(400)
-    try:
-        day = datetime.strptime(day, date_fmt)
-    except ValueError:
-        abort(400)
     res = db.get_week_by_date(day)
     week = TradingWeek(day)
     # result from DB is a dictionary, we can construct the object from it.
@@ -331,6 +327,7 @@ def add_tag_to_week(day):
         week.from_dict(res)
     week.add_tag(tag)
     res = db.upsert_week(week)
-    app.logger.debug(f"DEBUG: {res}")
+    if res.modified_count:
+        return make_response([], 201)
     return []
 
