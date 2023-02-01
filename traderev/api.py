@@ -1,10 +1,15 @@
 import time
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import abort, Blueprint, current_app as app, make_response, request
 from traderev import db
-from traderev.utils import compute_basic_stats, flatten_dict, week_range
-from traderev.schemas import LogEntryType, UtilityLogEntry
+from traderev.utils import (compute_basic_stats,
+        date_fmt,
+        flatten_dict,
+        week_range,
+        weeks_of_year,
+        )
+from traderev.schemas import LogEntryType, UtilityLogEntry, TradingWeek
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 @bp.route("/transactions", methods=["GET"])
@@ -30,7 +35,7 @@ def transaction_by_date():
     """
     try:
         day = request.args['day']
-        day = datetime.strptime(day, db.date_fmt).date()
+        day = datetime.strptime(day, date_fmt).date()
     except (ValueError, KeyError):
         abort(400)
     res = db.get_transactions_by_date(day)
@@ -62,7 +67,7 @@ def trades_by_date():
     """
     try:
         day = request.args['day']
-        day = datetime.strptime(day, db.date_fmt).date()
+        day = datetime.strptime(day, date_fmt).date()
     except (ValueError, KeyError):
         abort(400)
     if 'opened' in request.args:
@@ -236,7 +241,7 @@ def update_trade_profits():
 @bp.route("/stats/daily/<day>", methods=["GET"])
 def daily_stats(day):
     try:
-        day = datetime.strptime(day, db.date_fmt).date()
+        day = datetime.strptime(day, date_fmt).date()
     except ValueError:
         abort(400)
     trades = db.get_closed_trades_by_date(day)
@@ -275,3 +280,57 @@ def utility_log():
         abort(400)
     res = db.get_utility_events(event_type, event_count)
     return list(res)
+
+@bp.route("/weeks/<day>", methods=["GET"])
+def get_week_by_date(day):
+    res = db.get_week_by_date(day)
+    if not res:
+        abort(404)
+    return res
+
+@bp.route("/weeks/yearly", methods=["GET"])
+def get_weeks_by_year():
+    try:
+        year = int(request.args['year'] )
+    except (ValueError, KeyError):
+        abort(400)
+
+    # If current year then only return up to next week.
+    # Otherwise return the full year.
+    today = datetime.utcnow().date()
+    if today.year == year:
+        nextweek = today + timedelta(days=7-today.weekday())
+        mondays = weeks_of_year(year, nextweek)
+    else:
+        mondays = weeks_of_year(year, datetime(year, 12, 31))
+    res = []
+    for monday in mondays:
+        monday_str = datetime.strftime(monday, date_fmt)
+        week_obj = TradingWeek(monday_str)
+        db_week = db.get_week_by_date(monday_str)
+        if db_week:
+            week_obj.memos = db_week['memos']
+            week_obj.tags = db_week['tags']
+        res.append(week_obj.to_doc())
+    return res
+
+@bp.route("/weeks/<day>/tags", methods=["POST"])
+def add_tag_to_week(day):
+    try:
+        tag = request.args['tag']
+    except KeyError:
+        abort(400)
+    try:
+        day = datetime.strptime(day, date_fmt)
+    except ValueError:
+        abort(400)
+    res = db.get_week_by_date(day)
+    week = TradingWeek(day)
+    # result from DB is a dictionary, we can construct the object from it.
+    if res:
+        week.from_dict(res)
+    week.add_tag(tag)
+    res = db.upsert_week(week)
+    app.logger.debug(f"DEBUG: {res}")
+    return []
+

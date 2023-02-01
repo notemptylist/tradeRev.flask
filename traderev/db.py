@@ -3,9 +3,10 @@ from datetime import datetime
 from flask import current_app, g
 from flask_pymongo import PyMongo
 from werkzeug.local import LocalProxy
-from .utils import flatten_dict
+from .utils import flatten_dict, date_fmt
 from bson import ObjectId
 from bson.errors import InvalidId
+from .schemas import TradingWeek
 
 def get_db():
     """Configuration method to return a db instance
@@ -19,7 +20,6 @@ def get_db():
     return db
 
 db = LocalProxy(get_db)
-date_fmt = "%Y-%m-%d"
 convert_transactiondate = {
     "$addFields": {
         "openDate": {
@@ -323,7 +323,7 @@ def make_trades_toc():
 def add_utility_event(entry):
     """Add the event log entry to the utilitylog collection.
     """
-    res = db.utilitylog.insert_one(entry.toDoc())
+    res = db.utilitylog.insert_one(entry.to_doc())
     return res
 
 def get_utility_events(event_type, event_count):
@@ -331,3 +331,21 @@ def get_utility_events(event_type, event_count):
     """
     res = db.utilitylog.find({"logtype": event_type}, {"_id": 0}).sort("timestamp", -1).limit(event_count)
     return res
+
+def get_week_by_date(day):
+    """Fetch one week identified by date
+    """
+    # if isinstance(day, str):
+    #     try:
+    #         day = datetime.strptime(day, date_fmt)
+    #     except ValueError:
+    #         return None
+    res = db.weeks.find_one({"start_date": day}, {"_id": 0})
+    return res
+
+def upsert_week(week: TradingWeek):
+    """Insert or update a week document
+    """
+    update = week.to_update()
+    match = {'start_date': week.start_date} 
+    return db.weeks.update_one(match, update , upsert=True)

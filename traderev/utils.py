@@ -12,6 +12,7 @@ class CustomJSONEncoder(JSONEncoder):
             return str(obj)
         return JSONEncoder.default(self, obj)
 
+date_fmt = "%Y-%m-%d"
 def flatten_dict(mappings: List[Dict], field: str) -> List[Any]:
     """Takes in a list of dictionaries and returns a list of
     values which are keyed by `field`.
