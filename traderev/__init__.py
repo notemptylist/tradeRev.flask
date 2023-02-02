@@ -2,6 +2,7 @@ import os
 import sys
 import configparser
 from flask import Flask, redirect
+from flask_cors import CORS
 from werkzeug.middleware.profiler import ProfilerMiddleware
 from .utils import CustomJSONEncoder
 
@@ -38,6 +39,7 @@ def create_app(test_config=None):
     from . import frontend
     app.register_blueprint(api.bp)
     app.register_blueprint(frontend.bp)
+    cors = CORS(app, resources={r"/api/*": {'origins':r"*"}})
     # @app.errorhandler(404)
     # def not_found_redirect(e):
     #     return redirect('/', 302)
