@@ -82,13 +82,13 @@ Weeks are identified by the Monday date.
         ]
     }            
 ```
-1. - [ ] Get one week.  
+1. - [x] Get one week.  
 ```GET /api/weeks/{week_day}```
-3. - [ ] Get a list of weeks for the given year.  
+3. - [x] Get a list of weeks for the given year.  
 ```GET /api/weeks/yearly?year=2022 -> [list of weeks]```
 1. - [ ] Get the week containing a single date.  
 ```GET /api/weeks/daily?day=2022-01-06```
-1. - [ ] Add a tag to a specific week.    
+1. - [x] Add a tag to a specific week.    
 ```POST /api/weeks/{week_day}/tags <- {'tag': 'foobar'}```
 1. - [ ] Remove a specific tag from a week.  
 ```DELETE /api/weeks/{week_day}/tags <- {'tag': 'tagtoremove'}```
