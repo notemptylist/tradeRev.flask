@@ -251,10 +251,14 @@ def daily_stats(day):
     stats = {}
     return compute_basic_stats(df)
 
-@bp.route("/stats/weekly/<day>", methods=["GET"])
-def weekly_stats(day):
+@bp.route("/stats/weekly", methods=["GET"])
+def weekly_stats():
     try:
-        start_date, end_date = week_range(day)
+        week_day = request.args['week']
+    except KeyError:
+        abort(400)
+    try:
+        start_date, end_date = week_range(week_day)
     except ValueError:
         abort(400)
     app.logger.debug(f"Grabbing stats between {start_date} and {end_date}")
@@ -309,8 +313,10 @@ def get_weeks_by_year():
         week_obj = TradingWeek(monday_str)
         db_week = db.get_week_by_date(monday_str)
         if db_week:
-            week_obj.memos = db_week['memos']
-            week_obj.tags = db_week['tags']
+            week_obj.from_dict(db_week)
+        else:
+            # lets persist the newly created week object.
+            db.upsert_week(week_obj)
         res.append(week_obj.to_doc())
     return res
 

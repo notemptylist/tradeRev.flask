@@ -37,6 +37,21 @@ class UtilityLogEntry():
         }
 
 
+def get_dates_between(start, end):
+    """Generate a list of dates between two dates, including start and end.
+    """
+    if isinstance(start, str):
+        start = datetime.strptime(start, date_fmt)
+    if isinstance(end, str):
+        end = datetime.strptime(end, date_fmt)
+
+    date_list = []
+    current = start
+    while current <= end:
+        date_list.append(current.strftime(date_fmt))
+        current += timedelta(days=1)
+    return date_list
+
 class TradingWeek():
 
     def __init__(self, monday: str):
@@ -44,7 +59,9 @@ class TradingWeek():
         """
         self.start_date = monday
         # to get friday's date we add 4 days to monday
-        friday = datetime.strptime(monday, date_fmt) + timedelta(days=4)
+        monday_dt = datetime.strptime(monday, date_fmt)
+        friday = monday_dt + timedelta(days=4)
+        self.weekdays = get_dates_between(monday, friday) 
         self.end_date = datetime.strftime(friday, date_fmt)
         self.tags = []
         self.memos = []
@@ -68,6 +85,7 @@ class TradingWeek():
         self.end_date = d['end_date']
         self.tags = d['tags']
         self.memos = d['memos']
+        self.weekdays = d['weekdays']
 
     def to_update(self):
         """Return an update document
@@ -76,6 +94,7 @@ class TradingWeek():
             'end_date': self.end_date,
             'tags' : self.tags,
             'memos': self.memos,
+            'weekdays': self.weekdays,
             }
         }
         return update
