@@ -39,12 +39,11 @@ def week_range(day: str) -> Tuple[datetime, datetime]:
     -------
         tuple : A tuple with two datetime objects
     """
-    date_fmt_dashes = "%Y-%m-%d"
     date_fmt_slashes = "%Y/%m/%d"
 
     if isinstance(day, str):
         try:
-            day = datetime.strptime(day, date_fmt_dashes)
+            day = datetime.strptime(day, date_fmt)
         except ValueError:
             day = datetime.strptime(day, date_fmt_slashes)
     week_start = day - timedelta(day.weekday())
@@ -67,8 +66,6 @@ def compute_basic_stats(df: pd.DataFrame):
     stats['total_trades'] = df.shape[0]
     stats['max_gain_dollars'] = df['profitdollars'].max()
     stats['max_gain_percent'] = df['profitpercent'].max()
-    stats['max_loss_dollars'] = df['profitdollars'].min()
-    stats['max_loss_percent'] = df['profitpercent'].min()
     stats['pandl'] = df['profitdollars'].sum()
     stats['win_rate'] = len(df[df['profitdollars'] > 0]) / df.shape[0] * 100
     stats['call_count'] = len(df[df['putcall'] == 'CALL'])
@@ -76,9 +73,11 @@ def compute_basic_stats(df: pd.DataFrame):
     stats['total_commission'] = df['totalcommission'].sum()
     stats['total_fees'] = df['totalfees'].sum()
     if any(df['profitdollars'] <0):
+        stats['max_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].min()
+        stats['max_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].min()
         stats['avg_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].mean()
         stats['avg_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].mean()
-    stats['truepnl'] = stats['pandl'] - stats['total_commission'] - stats['total_fees']
+    stats['true_pnl'] = stats['pandl'] - stats['total_commission'] - stats['total_fees']
     return stats
 
 def weeks_of_year(year: int, until: datetime) -> List[datetime]:
