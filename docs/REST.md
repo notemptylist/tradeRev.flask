@@ -59,7 +59,7 @@ Trades are formed from existing transactions.  With the exception of tags, indiv
 
 1. - [ ] Compute statistics for the day.   
 ```GET /api/stats/daily?day={2006-01-02}```
-1. - [ ] Compute and return weekly stats for the week containing the specified day.  
+1. - [x] Compute and return weekly stats for the week containing the specified day.  
 ```GET /api/stats/weekly?week={2006-01-02}```
 1. TBD
 
@@ -70,8 +70,9 @@ Trades are formed from existing transactions.  With the exception of tags, indiv
 Weeks are identified by the Monday date.  
 ```
     { 
-      'start_date': '2022-01-01',
-      'end_date': '2022-01-05',
+      'start_date': '2022-01-02',
+      'end_date': '2022-01-06',
+      'weekdays' : ['2022-01-02', '2022-01-03', '2022-01-04', '2022-01-05', '2022-01-06']
       'tags': ['tag1', 'superb', 'red'],
       'memos':[
           {
