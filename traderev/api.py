@@ -238,17 +238,17 @@ def update_trade_profits():
     db.add_utility_event(event_entry)
     return output
 
-@bp.route("/stats/daily/<day>", methods=["GET"])
-def daily_stats(day):
+@bp.route("/stats/daily", methods=["GET"])
+def daily_stats():
     try:
+        day = request.args['day']
         day = datetime.strptime(day, date_fmt).date()
-    except ValueError:
+    except (ValueError, KeyError):
         abort(400)
     trades = db.get_closed_trades_by_date(day)
     if not trades:
         abort(404)
     df = pd.DataFrame(trades)
-    stats = {}
     return compute_basic_stats(df)
 
 @bp.route("/stats/weekly", methods=["GET"])
