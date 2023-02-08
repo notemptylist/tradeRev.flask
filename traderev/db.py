@@ -231,7 +231,7 @@ def close_trade_with_transaction(trade_id, tr):
         },
         "$push": {
             "closingtransactions": {
-                'id': tr['id'],
+                "id": tr['id'],
                 "amount": tr["amount"]
             }
         },
@@ -335,11 +335,6 @@ def get_utility_events(event_type, event_count):
 def get_week_by_date(day):
     """Fetch one week identified by date
     """
-    # if isinstance(day, str):
-    #     try:
-    #         day = datetime.strptime(day, date_fmt)
-    #     except ValueError:
-    #         return None
     res = db.weeks.find_one({"start_date": day}, {"_id": 0})
     return res
 
@@ -347,5 +342,12 @@ def upsert_week(week: TradingWeek):
     """Insert or update a week document
     """
     update = week.to_update()
-    match = {'start_date': week.start_date} 
+    match = {"start_date": week.start_date} 
     return db.weeks.update_one(match, update , upsert=True)
+
+def delete_tag_from_week(day, tag):
+    """Delete a single tag from a week document
+    """
+    match = {"start_date": day}
+    update = {"$pull": { "tags": tag}}
+    return db.weeks.update_one(match, update)

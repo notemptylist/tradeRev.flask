@@ -91,7 +91,7 @@ Weeks are identified by the Monday date.
 ```GET /api/weeks/daily?day=2022-01-06```
 1. - [x] Add a tag to a specific week.    
 ```POST /api/weeks/{week_day}/tags <- {'tag': 'foobar'}```
-1. - [ ] Remove a specific tag from a week.  
+1. - [x] Remove a specific tag from a week.  
 ```DELETE /api/weeks/{week_day}/tags <- {'tag': 'tagtoremove'}```
 1. - [ ] Add a memo to a specific week.    
 ```POST /api/weeks/{week_day}/memos <- {'memo': 'A sample memo' }```
