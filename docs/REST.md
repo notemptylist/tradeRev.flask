@@ -93,6 +93,8 @@ Weeks are identified by the Monday date.
 ```POST /api/weeks/{week_day}/tags <- {'tag': 'foobar'}```
 1. - [x] Remove a specific tag from a week.  
 ```DELETE /api/weeks/{week_day}/tags <- {'tag': 'tagtoremove'}```
+1. - [x] Get just the tags for specific a week.  
+```GET /api/weeks/{week_day}/tags ```
 1. - [ ] Add a memo to a specific week.    
 ```POST /api/weeks/{week_day}/memos <- {'memo': 'A sample memo' }```
 1. - [ ] Remove a memo from a specific week by memo id.  
@@ -121,6 +123,8 @@ Weeks are identified by the Monday date.
 ```POST /api/days/{day}/tags <- {'tag': 'foobar'}```
 1. - [ ] Remove a specific tag from a day.  
 ```DELETE /api/days/{day}/tags <- {'tag': 'tagtoremove'}```
+1. - [ ] Get just the tags for specific a day.  
+```GET /api/weeks/{week_day}/tags ```
 1. - [ ] Add a memo to a specific day.  
 ```POST /api/days/{day}/memos <- {'memo': 'A sample memo' }```
 1. - [ ] Remove a memo from a specific day by memo id.  

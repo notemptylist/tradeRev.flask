@@ -320,6 +320,14 @@ def get_weeks_by_year():
         res.append(week_obj.to_doc())
     return res
 
+@bp.route("/weeks/<day>/tags", methods=["GET"])
+def get_tags_for_week(day):
+    res = db.get_tags_for_week(day)
+    app.logger.info(res)
+    if not res or 'tags' not in res:
+        abort(404)
+    return res['tags']
+
 @bp.route("/weeks/<day>/tags", methods=["POST"])
 def add_tag_to_week(day):
     try:

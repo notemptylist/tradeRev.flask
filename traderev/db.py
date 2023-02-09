@@ -345,6 +345,12 @@ def upsert_week(week: TradingWeek):
     match = {"start_date": week.start_date} 
     return db.weeks.update_one(match, update , upsert=True)
 
+def get_tags_for_week(day):
+    """Fetch just the tags for a given week
+    """
+    match = {"start_date": day}
+    project = {"tags": 1, "_id": 0}
+    return db.weeks.find_one(match, project)
 def delete_tag_from_week(day, tag):
     """Delete a single tag from a week document
     """
