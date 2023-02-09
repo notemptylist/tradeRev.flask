@@ -63,7 +63,8 @@ Trades are formed from existing transactions.  With the exception of tags, indiv
 ```GET /api/stats/daily?day={2006-01-02}```
 1. - [x] Compute and return weekly stats for the week containing the specified day.  
 ```GET /api/stats/weekly?week={2006-01-02}```
-1. TBD
+1. - [x] Compute statistics for the last N number of trades.   
+```GET /api/stats/trades?n={int}```
 
 ---
 

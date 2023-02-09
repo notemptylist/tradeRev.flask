@@ -245,6 +245,19 @@ def update_trade_profits():
     db.add_utility_event(event_entry)
     return output
 
+@bp.route("/stats/trades", methods=["GET"])
+def stats_by_trades():
+    num = None
+    try:
+        num = int(request.args['n'])
+    except KeyError:
+        pass
+    except ValueError:
+        abort(400)
+    res = db.get_trades(num) 
+    df = pd.DataFrame(res)
+    return compute_basic_stats(df)
+
 @bp.route("/stats/daily", methods=["GET"])
 def daily_stats():
     try:
