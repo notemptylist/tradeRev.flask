@@ -79,9 +79,12 @@ def get_transactions_by_date(day: str):
     res = db.transactions.aggregate(pipeline)
     return res
 
-def get_all_trades():
+def get_trades(num: int = None):
     """Get all trades in the trades collection.
     """
+    if num:
+        match = {"closingdate": {"$ne": 0}}
+        return db.trades.find(match).sort("closingdate", -1).limit(num)
     return db.trades.find()
 
 def get_trade_by_id(trade_id: str):
@@ -351,6 +354,7 @@ def get_tags_for_week(day):
     match = {"start_date": day}
     project = {"tags": 1, "_id": 0}
     return db.weeks.find_one(match, project)
+
 def delete_tag_from_week(day, tag):
     """Delete a single tag from a week document
     """

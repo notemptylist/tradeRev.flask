@@ -44,10 +44,17 @@ def transaction_by_date():
     return list(res)
 
 @bp.route("/trades", methods=["GET"])
-def get_all_trades():
+def get_trades():
     """Return all trades.
     """
-    res = db.get_all_trades()
+    num = None
+    try:
+        num = int(request.args['n'])
+    except KeyError:
+        pass
+    except ValueError:
+        abort(400)
+    res = db.get_trades(num)
     if not res:
         abort(404)
     return list(res)

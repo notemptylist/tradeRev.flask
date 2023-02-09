@@ -38,6 +38,8 @@ Trades are formed from existing transactions.  With the exception of tags, indiv
 ```POST /api/trades```
 1. - [x] Retrieve all trades.  
 ```GET /api/trades -> [ ]```
+1. - [x] Retrieve a number of trades ordered by closing date in descending order.  
+```GET /api/trades?n={int} -> [ ]```
 1. - [x] Retrieve trades by ID.   
 ```GET /api/trades/{id} -> single trade with id = {id}```
 1. - [x] Retrieve trades opened on specified date.  
