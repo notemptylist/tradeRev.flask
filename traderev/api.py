@@ -342,7 +342,7 @@ def add_tag_to_week(day):
     week.add_tag(tag)
     res = db.upsert_week(week)
     if res.modified_count:
-        return make_response({}, 201)
+        return make_response(week.tags, 201)
     return []
 
 @bp.route("/weeks/<day>/tags", methods=["DELETE"])
@@ -354,5 +354,5 @@ def delete_tag_from_week(day):
 
     res = db.delete_tag_from_week(day, tag)
     if res.modified_count:
-        return make_response({}, 204)
+        return make_response(get_tags_for_week(day), 201)
     return make_response({}, 404)
