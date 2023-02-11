@@ -66,18 +66,23 @@ def compute_basic_stats(df: pd.DataFrame):
     stats['total_trades'] = df.shape[0]
     stats['max_gain_dollars'] = df['profitdollars'].max()
     stats['max_gain_percent'] = df['profitpercent'].max()
-    stats['pandl'] = df['profitdollars'].sum()
+    stats['gross_pnl'] = df['profitdollars'].sum()
     stats['win_rate'] = len(df[df['profitdollars'] > 0]) / df.shape[0] * 100
     stats['call_count'] = len(df[df['putcall'] == 'CALL'])
     stats['put_count'] = len(df[df['putcall'] == 'PUT'])
     stats['total_commission'] = df['totalcommission'].sum()
     stats['total_fees'] = df['totalfees'].sum()
+    any_wins = df['profitdollars'] > 0
+    if any(any_wins):
+        stats['avg_gain_dollars'] = df[any_wins]['profitdollars'].mean()
+        stats['avg_gain_percent'] = df[any_wins]['profitpercent'].mean()
+
     if any(df['profitdollars'] <0):
         stats['max_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].min()
         stats['max_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].min()
         stats['avg_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].mean()
         stats['avg_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].mean()
-    stats['true_pnl'] = stats['pandl'] - stats['total_commission'] - stats['total_fees']
+    stats['total_pnl'] = stats['gross_pnl'] - stats['total_commission'] - stats['total_fees']
     return stats
 
 def weeks_of_year(year: int, until: datetime) -> List[datetime]:
