@@ -15,6 +15,7 @@ Regular batch jobs are required as new transactions and trades are added or crea
 - Create and update trades by compbining open and close transactions.
 - Calculate and Update the profit calculation for trades.
 - Update trades with expired options ( we don't get a transaction record for these).
+- Once a trade is closed, compute and store the duration. (closing transactiondate - opening transactiondate )
 
 It would be a good idea to keep a log tracking the execution of these.
 
