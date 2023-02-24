@@ -64,30 +64,39 @@ def compute_basic_stats(df: pd.DataFrame):
     """
     stats = {}
     stats['total_trades'] = df.shape[0]
-    stats['max_gain_dollars'] = df['profitdollars'].max()
-    stats['max_gain_percent'] = df['profitpercent'].max()
     stats['gross_pnl'] = df['profitdollars'].sum()
-    stats['win_rate'] = len(df[df['profitdollars'] > 0]) / df.shape[0] * 100
     stats['call_count'] = len(df[df['putcall'] == 'CALL'])
     stats['put_count'] = len(df[df['putcall'] == 'PUT'])
     stats['total_commission'] = df['totalcommission'].sum()
     stats['total_fees'] = df['totalfees'].sum()
-    any_wins = df['profitdollars'] > 0
-    stats['avg_gain_dollars'] = 0
-    stats['avg_gain_percent'] = 0
-    if any(any_wins):
-        stats['avg_gain_dollars'] = df[any_wins]['profitdollars'].mean()
-        stats['avg_gain_percent'] = df[any_wins]['profitpercent'].mean()
 
+    stats['max_gain_dollars'] = df['profitdollars'].max()
+    stats['max_gain_percent'] = df['profitpercent'].max()
     stats['max_loss_dollars'] = 0
     stats['max_loss_percent'] = 0
     stats['avg_loss_percent'] = 0
     stats['avg_loss_dollars'] = 0
-    if any(df['profitdollars'] <0):
-        stats['max_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].min()
-        stats['max_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].min()
-        stats['avg_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].mean()
-        stats['avg_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].mean()
+    stats['avg_gain_dollars'] = 0
+    stats['avg_gain_percent'] = 0
+
+    any_wins = df['profitdollars'] > 0
+    winning_trades = df[any_wins]
+    stats['win_rate'] = len(winning_trades) / df.shape[0] * 100
+    gross_profit = winning_trades['profitdollars'].sum()
+    if any(any_wins):
+        stats['avg_gain_dollars'] = winning_trades['profitdollars'].mean()
+        stats['avg_gain_percent'] = winning_trades['profitpercent'].mean()
+
+    any_loses = df['profitdollars'] < 0
+    losing_trades = df[any_loses]
+    gross_loss = losing_trades['profitdollars'].sum()
+    if any(any_loses):
+        stats['max_loss_dollars'] = losing_trades['profitdollars'].min()
+        stats['max_loss_percent'] = losing_trades['profitpercent'].min()
+        stats['avg_loss_dollars'] = losing_trades['profitdollars'].mean()
+        stats['avg_loss_percent'] = losing_trades['profitpercent'].mean()
+
+    stats['profit_factor'] = gross_profit / gross_loss
     stats['total_pnl'] = stats['gross_pnl'] - stats['total_commission'] - stats['total_fees']
     return stats
 
