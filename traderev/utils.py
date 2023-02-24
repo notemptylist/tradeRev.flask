@@ -73,10 +73,16 @@ def compute_basic_stats(df: pd.DataFrame):
     stats['total_commission'] = df['totalcommission'].sum()
     stats['total_fees'] = df['totalfees'].sum()
     any_wins = df['profitdollars'] > 0
+    stats['avg_gain_dollars'] = 0
+    stats['avg_gain_percent'] = 0
     if any(any_wins):
         stats['avg_gain_dollars'] = df[any_wins]['profitdollars'].mean()
         stats['avg_gain_percent'] = df[any_wins]['profitpercent'].mean()
 
+    stats['max_loss_dollars'] = 0
+    stats['max_loss_percent'] = 0
+    stats['avg_loss_percent'] = 0
+    stats['avg_loss_dollars'] = 0
     if any(df['profitdollars'] <0):
         stats['max_loss_dollars'] = df[df['profitdollars'] < 0]['profitdollars'].min()
         stats['max_loss_percent'] = df[df['profitpercent'] < 0]['profitpercent'].min()
